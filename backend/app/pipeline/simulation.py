@@ -9,7 +9,7 @@ from ..models import SimResult
 from .sandbox import SandboxError, UnsafeVerilogError, VerilogGuard
 from .simulate import Simulator, vcd_to_wavedrom
 from .testbench import (
-    CombinationalTestbenchGenerator,
+    AutoTestbenchGenerator,
     TestbenchError,
     TestbenchGenerator,
     ports_from_netlist,
@@ -26,7 +26,7 @@ class SimulationPipeline:
     ):
         self._simulator = simulator
         self._guard = guard
-        self._testbench = testbench or CombinationalTestbenchGenerator()
+        self._testbench = testbench or AutoTestbenchGenerator()
 
     def run(self, verilog: str, netlist_json: str, top: str | None) -> SimResult:
         try:

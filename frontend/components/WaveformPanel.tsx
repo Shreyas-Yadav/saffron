@@ -1,7 +1,8 @@
-// Pure presentational waveform renderer, textbook style: every signal is a binary
-// 0/1 square wave (buses arrive pre-expanded into per-bit signals from the backend),
-// with dashed vertical gridlines marking each time step.
-import type { WaveDrom } from "@/lib/types";
+// Pure presentational waveform renderer, textbook style: narrow signals are binary
+// 0/1 square waves (buses up to 4 bits arrive pre-expanded per-bit from the backend);
+// wider datapaths arrive as a single bus signal (`=` + data) drawn as labelled value
+// segments. Dashed vertical gridlines mark each time step.
+import type { WaveDrom, WaveDromSignal } from "@/lib/types";
 
 interface Props {
   wavedrom: WaveDrom | null;
@@ -62,19 +63,34 @@ function SignalRow({
   y,
   steps,
 }: {
-  sig: { name: string; wave: string };
+  sig: WaveDromSignal;
   y: number;
   steps: number;
 }) {
+  const isBus = sig.wave.includes("=");
+  return (
+    <g>
+      <text
+        x={0}
+        y={y + (HI + LO) / 2 + 4}
+        className="fill-neutral-300 text-[12px]"
+      >
+        {sig.name}
+      </text>
+      {isBus ? renderBus(sig, y) : renderBinary(sig.wave, y, steps)}
+    </g>
+  );
+}
+
+function renderBinary(wave: string, y: number, steps: number) {
   // Resolve '.' (hold) into the token carried from the previous cell.
   const tokens: string[] = [];
   let prev = "0";
   for (let k = 0; k < steps; k++) {
-    const c = sig.wave[k] ?? ".";
+    const c = wave[k] ?? ".";
     tokens.push(c === "." ? prev : c);
     if (c !== ".") prev = c;
   }
-
   const yOf = (t: string) =>
     t === "1" ? y + HI : t === "0" ? y + LO : y + (HI + LO) / 2;
   let d = "";
@@ -88,19 +104,46 @@ function SignalRow({
     d += `H ${x1} `;
     prevY = yk;
   }
+  return <path d={d} className="fill-none stroke-amber-400" strokeWidth={2} />;
+}
 
-  return (
-    <g>
-      <text
-        x={0}
-        y={y + (HI + LO) / 2 + 4}
-        className="fill-neutral-300 text-[12px]"
-      >
-        {sig.name}
-      </text>
-      <path d={d} className="fill-none stroke-amber-400" strokeWidth={2} />
-    </g>
-  );
+function renderBus(sig: WaveDromSignal, y: number) {
+  // Group cells into segments that share a value (new segment at each '=').
+  const data = sig.data ?? [];
+  const segs: { start: number; end: number; label: string }[] = [];
+  let di = 0;
+  for (let k = 0; k < sig.wave.length; k++) {
+    const c = sig.wave[k];
+    if (c === "=" || k === 0) {
+      segs.push({ start: k, end: k, label: data[di++] ?? "" });
+    } else if (segs.length) {
+      segs[segs.length - 1].end = k;
+    }
+  }
+  const top = y + HI;
+  const bot = y + LO;
+  const mid = (top + bot) / 2;
+  const S = 5;
+  return segs.map((s, i) => {
+    const x0 = LABEL + s.start * U;
+    const x1 = LABEL + (s.end + 1) * U;
+    const d = `M ${x0 + S} ${top} H ${x1 - S} L ${x1} ${mid} L ${x1 - S} ${bot} H ${
+      x0 + S
+    } L ${x0} ${mid} Z`;
+    return (
+      <g key={i}>
+        <path d={d} className="fill-amber-500/10 stroke-amber-400" strokeWidth={2} />
+        <text
+          x={(x0 + x1) / 2}
+          y={mid + 4}
+          textAnchor="middle"
+          className="fill-amber-200 text-[12px]"
+        >
+          {s.label}
+        </text>
+      </g>
+    );
+  });
 }
 
 function Centered({ children }: { children: React.ReactNode }) {

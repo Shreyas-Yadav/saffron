@@ -45,10 +45,12 @@ wired in one composition root (`backend/app/api/deps.py`).
 - `pipeline/orchestrator.py` — generate → synthesize → **auto-repair** (feeds tool
   errors back to the LLM, retries up to 3×) → returns code + schematic together
 - `pipeline/testbench.py` + `simulate.py` + `simulation.py` — auto-generate a
-  testbench from the netlist ports, simulate with Icarus, convert VCD → WaveDrom
+  testbench from the netlist ports (combinational sweep, or clocked stimulus for
+  sequential modules — chosen automatically), simulate with Icarus, convert VCD →
+  WaveDrom. Narrow signals render per-bit; wide datapaths as value segments.
 
 ## Status
 
 - [x] Toolchain spike, synthesis pipeline, schematic in browser
 - [x] LLM generation + auto-repair loop
-- [x] Simulation → waveform (combinational; sequential reported gracefully)
+- [x] Simulation → waveform — combinational **and** sequential (clock/reset/enable)

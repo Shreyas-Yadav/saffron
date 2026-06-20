@@ -39,12 +39,16 @@ class IcarusSimulator(Simulator):
             return ws.read("dut.vcd")
 
 
-def vcd_to_wavedrom(vcd_text: str, names: list[str]) -> dict:
+def vcd_to_wavedrom(
+    vcd_text: str, names: list[str], max_expand_bits: int = 4
+) -> dict:
     """Convert VCD to WaveDrom showing only `names`, in that order.
 
-    Every signal renders as a 0/1 square wave (textbook style): multi-bit buses are
-    expanded into one binary signal per bit, MSB first, labelled `name[i]`. `.` holds
-    the previous value; `x` marks undefined.
+    Narrow signals render as textbook 0/1 square waves: a bus up to `max_expand_bits`
+    wide is expanded into one binary signal per bit, MSB first (`name[i]`). Wider
+    buses (datapaths) stay a single signal showing their decimal value per change, so
+    e.g. a 16-bit accumulator doesn't explode into 16 rows. `.` holds the previous
+    value; `x` marks undefined.
     """
     id_of: dict[str, str] = {}  # signal name -> vcd id (first occurrence wins)
     width_of: dict[str, int] = {}
@@ -79,13 +83,43 @@ def vcd_to_wavedrom(vcd_text: str, names: list[str]) -> dict:
         width = width_of.get(ident, 1)
         if width <= 1:
             signals.append(_binary_signal(name, evs, times, bit=None))
-        else:
+        elif width <= max_expand_bits:
             for bit in range(width - 1, -1, -1):  # MSB first
                 signals.append(
                     _binary_signal(f"{name}[{bit}]", evs, times, bit=bit)
                 )
+        else:
+            signals.append(_bus_signal(name, evs, times))
 
     return {"signal": signals}
+
+
+def _bus_signal(
+    label: str, evs: list[tuple[int, object]], times: list[int]
+) -> dict:
+    """A single wide-bus row: `=` at each change with a decimal `data` label."""
+    wave, data, prev = "", [], None
+    for t in times:
+        raw: object = None
+        for et, ev in evs:
+            if et <= t:
+                raw = ev
+            else:
+                break
+        try:
+            val = str(int(raw))  # type: ignore[arg-type]
+        except (TypeError, ValueError):
+            val = "x"
+        if val == prev:
+            wave += "."
+        else:
+            wave += "="
+            data.append(val)
+        prev = val
+    sig: dict = {"name": label, "wave": wave}
+    if data:
+        sig["data"] = data
+    return sig
 
 
 def _binary_signal(

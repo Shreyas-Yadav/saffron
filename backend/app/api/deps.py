@@ -39,6 +39,8 @@ def get_schematic_pipeline() -> SchematicPipeline:
 
 @lru_cache
 def get_simulation_pipeline() -> SimulationPipeline:
+    # Default testbench generator is AutoTestbenchGenerator (combinational or
+    # sequential based on the module's ports).
     return SimulationPipeline(
         simulator=IcarusSimulator(get_sandbox()),
         guard=VerilogGuard(),
