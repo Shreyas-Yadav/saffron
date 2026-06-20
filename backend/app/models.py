@@ -14,6 +14,17 @@ class SchematicResult(BaseModel):
     netlist_json: str | None = None  # yosys JSON (handy for debugging/waveform)
     error: str | None = None
     logs: str = ""
+    # Best-effort simulation result attached by the /synthesize route.
+    wavedrom: dict | None = None
+    sim_error: str | None = None
+
+
+class SimResult(BaseModel):
+    """Output of the simulation pipeline: a WaveDrom timing diagram (or why not)."""
+
+    wavedrom: dict | None = None
+    error: str | None = None
+    logs: str = ""
 
 
 class SynthesizeRequest(BaseModel):
@@ -60,3 +71,7 @@ class GenerateOutcome(BaseModel):
     renderer: str | None = None
     attempts: int = 1
     error: str | None = None
+    # Best-effort waveform (combinational modules); null if simulation was skipped
+    # or failed. `sim_error` explains a failure without blocking the schematic.
+    wavedrom: dict | None = None
+    sim_error: str | None = None

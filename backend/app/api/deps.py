@@ -11,6 +11,8 @@ from ..llm.provider import GeminiProvider, LLMProvider
 from ..pipeline.orchestrator import GenerateOrchestrator
 from ..pipeline.sandbox import LocalSandbox, Sandbox, VerilogGuard
 from ..pipeline.schematic import SchematicPipeline
+from ..pipeline.simulate import IcarusSimulator
+from ..pipeline.simulation import SimulationPipeline
 from ..pipeline.synthesize import NetlistSvgRenderer, YosysSynthesizer
 
 
@@ -35,10 +37,19 @@ def get_schematic_pipeline() -> SchematicPipeline:
     )
 
 
+@lru_cache
+def get_simulation_pipeline() -> SimulationPipeline:
+    return SimulationPipeline(
+        simulator=IcarusSimulator(get_sandbox()),
+        guard=VerilogGuard(),
+    )
+
+
 def get_orchestrator() -> GenerateOrchestrator:
     # Not cached: depends on the LLM provider, which validates the key at build time;
     # rebuilding per request keeps a missing/rotated key from being cached as a failure.
     return GenerateOrchestrator(
         llm=get_llm_provider(),
         schematic=get_schematic_pipeline(),
+        simulation=get_simulation_pipeline(),
     )

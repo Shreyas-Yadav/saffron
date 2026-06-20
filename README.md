@@ -44,9 +44,11 @@ wired in one composition root (`backend/app/api/deps.py`).
   `$system`/`$fopen`/… before any tool runs)
 - `pipeline/orchestrator.py` — generate → synthesize → **auto-repair** (feeds tool
   errors back to the LLM, retries up to 3×) → returns code + schematic together
+- `pipeline/testbench.py` + `simulate.py` + `simulation.py` — auto-generate a
+  testbench from the netlist ports, simulate with Icarus, convert VCD → WaveDrom
 
 ## Status
 
 - [x] Toolchain spike, synthesis pipeline, schematic in browser
-- [x] LLM generation + auto-repair loop (live Gemini call pending an API key)
-- [ ] Simulation → waveform
+- [x] LLM generation + auto-repair loop
+- [x] Simulation → waveform (combinational; sequential reported gracefully)

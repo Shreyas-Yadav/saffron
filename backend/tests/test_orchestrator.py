@@ -3,10 +3,17 @@ synthesis pipeline (real yosys/netlistsvg). No Gemini key required.
 """
 from pathlib import Path
 
-from app.api.deps import get_schematic_pipeline
+from app.api.deps import get_schematic_pipeline, get_simulation_pipeline
 from app.llm.provider import LLMProvider
 from app.models import ChatMessage, GenResult
 from app.pipeline.orchestrator import GenerateOrchestrator
+
+
+def _orchestrator(llm, **kw):
+    return GenerateOrchestrator(
+        llm, get_schematic_pipeline(), get_simulation_pipeline(), **kw
+    )
+
 
 VALID = (Path(__file__).parent.parent / "fixtures" / "full_adder.v").read_text()
 BROKEN = "module full_adder(input a, output y); assign y = ; endmodule"
@@ -33,7 +40,7 @@ def _gen(verilog: str) -> GenResult:
 
 def test_first_try_success_no_repair():
     llm = FakeLLM([_gen(VALID)])
-    outcome = GenerateOrchestrator(llm, get_schematic_pipeline()).generate(
+    outcome = _orchestrator(llm).generate(
         [ChatMessage(role="user", content="full adder")]
     )
     assert outcome.error is None
@@ -44,7 +51,7 @@ def test_first_try_success_no_repair():
 
 def test_recovers_from_broken_verilog():
     llm = FakeLLM([_gen(BROKEN), _gen(VALID)])
-    outcome = GenerateOrchestrator(llm, get_schematic_pipeline()).generate(
+    outcome = _orchestrator(llm).generate(
         [ChatMessage(role="user", content="full adder")]
     )
     assert outcome.error is None
@@ -57,9 +64,9 @@ def test_recovers_from_broken_verilog():
 
 def test_gives_up_after_max_attempts():
     llm = FakeLLM([_gen(BROKEN)])  # always broken
-    outcome = GenerateOrchestrator(
-        llm, get_schematic_pipeline(), max_attempts=3
-    ).generate([ChatMessage(role="user", content="full adder")])
+    outcome = _orchestrator(llm, max_attempts=3).generate(
+        [ChatMessage(role="user", content="full adder")]
+    )
     assert outcome.error is not None
     assert outcome.attempts == 3
     assert llm.calls == 3

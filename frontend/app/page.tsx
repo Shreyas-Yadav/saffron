@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 
-import { SchematicPanel } from "@/components/SchematicPanel";
+import { ResultTabs } from "@/components/ResultTabs";
 import { chat, synthesize } from "@/lib/api";
 import type { ChatMessage, SchematicResult } from "@/lib/types";
 
@@ -53,6 +53,8 @@ export default function Home() {
         netlist_json: null,
         logs: "",
         error: res.error,
+        wavedrom: res.wavedrom,
+        sim_error: res.sim_error,
       });
     } catch (err) {
       setError(err instanceof Error ? err.message : "generation failed");
@@ -73,6 +75,8 @@ export default function Home() {
         netlist_json: null,
         logs: "",
         error: err instanceof Error ? err.message : "request failed",
+        wavedrom: null,
+        sim_error: null,
       });
     } finally {
       setSynthLoading(false);
@@ -132,9 +136,9 @@ export default function Home() {
           </div>
         </section>
 
-        {/* Right: rendered schematic */}
+        {/* Right: schematic + waveform tabs */}
         <section className="overflow-hidden">
-          <SchematicPanel result={result} loading={synthLoading || genLoading} />
+          <ResultTabs result={result} loading={synthLoading || genLoading} />
         </section>
       </div>
     </main>

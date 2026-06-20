@@ -17,7 +17,6 @@ out/
 # Spike / scratch work (proof-of-concept, not app code)
 backend/spike/
 
-# Tool & verification artifacts
+# Tool & verification artifacts (screenshots live only at the repo root)
 .playwright-mcp/
-*-verify.png
-*-iterate.png
+/*.png

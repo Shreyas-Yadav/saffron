@@ -1,12 +1,24 @@
 // Mirrors the backend Pydantic contracts (app/models.py). Single source of the
 // shapes that cross the network boundary.
 
+// A WaveDrom timing diagram: one entry per signal.
+export interface WaveDromSignal {
+  name: string;
+  wave: string;
+  data?: string[];
+}
+export interface WaveDrom {
+  signal: WaveDromSignal[];
+}
+
 export interface SchematicResult {
   svg: string | null;
   renderer: string | null;
   netlist_json: string | null;
   error: string | null;
   logs: string;
+  wavedrom: WaveDrom | null;
+  sim_error: string | null;
 }
 
 export interface SynthesizeRequest {
@@ -28,4 +40,6 @@ export interface GenerateOutcome {
   renderer: string | null;
   attempts: number;
   error: string | null;
+  wavedrom: WaveDrom | null;
+  sim_error: string | null;
 }

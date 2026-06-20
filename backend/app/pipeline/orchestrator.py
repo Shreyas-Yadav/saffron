@@ -7,9 +7,10 @@ fails synthesis, the tool error is fed back to the model and regeneration is ret
 """
 from __future__ import annotations
 
-from ..models import ChatMessage, GenerateOutcome
+from ..models import ChatMessage, GenerateOutcome, SimResult
 from ..llm.provider import LLMProvider
 from .schematic import SchematicPipeline
+from .simulation import SimulationPipeline
 
 
 class GenerateOrchestrator:
@@ -17,10 +18,12 @@ class GenerateOrchestrator:
         self,
         llm: LLMProvider,
         schematic: SchematicPipeline,
+        simulation: SimulationPipeline,
         max_attempts: int = 3,
     ):
         self._llm = llm
         self._schematic = schematic
+        self._simulation = simulation
         self._max_attempts = max_attempts
 
     def generate(self, messages: list[ChatMessage]) -> GenerateOutcome:
@@ -36,6 +39,12 @@ class GenerateOrchestrator:
             schem = self._schematic.build(gen.verilog, gen.top_module)
             attempt += 1
 
+        # Simulation is best-effort: a waveform failure never blocks the schematic.
+        # The repair loop only targets synthesis (structure), not simulation.
+        sim = SimResult()
+        if schem.error is None and schem.netlist_json:
+            sim = self._simulation.run(gen.verilog, schem.netlist_json, gen.top_module)
+
         return GenerateOutcome(
             top_module=gen.top_module,
             verilog=gen.verilog,
@@ -44,4 +53,6 @@ class GenerateOrchestrator:
             renderer=schem.renderer,
             attempts=attempt,
             error=schem.error,
+            wavedrom=sim.wavedrom,
+            sim_error=sim.error,
         )
