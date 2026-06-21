@@ -38,6 +38,12 @@ Rules:
 - `top_module` MUST exactly match the module name you declare.
 - `verilog` is the complete module source, nothing else.
 - `explanation` is one or two sentences for a human.
+- `properties`: a short list of formal assertions describing the intended behavior,
+  to be proven by a SAT solver. Each is a SINGLE boolean Verilog expression over the
+  module's OWN ports only (no `assert`, no `;`), true for every input — e.g. for an
+  adder `"{cout, sum} == a + b + cin"`, for a 2:1 mux `"y == (sel ? b : a)"`. Only
+  emit properties for COMBINATIONAL modules; for clocked modules return an empty list.
+  If you can't state a sound property, return an empty list rather than a weak one.
 """
 
 
@@ -47,6 +53,7 @@ class _Schema(BaseModel):
     top_module: str
     verilog: str
     explanation: str
+    properties: list[str] = []
 
 
 class GeminiProvider(LLMProvider):
@@ -107,4 +114,5 @@ class GeminiProvider(LLMProvider):
             top_module=parsed.top_module,
             verilog=parsed.verilog,
             explanation=parsed.explanation,
+            properties=parsed.properties,
         )

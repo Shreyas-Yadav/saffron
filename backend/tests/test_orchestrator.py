@@ -3,7 +3,11 @@ synthesis pipeline (real yosys/netlistsvg). No Gemini key required.
 """
 from pathlib import Path
 
-from app.api.deps import get_schematic_pipeline, get_simulation_pipeline
+from app.api.deps import (
+    get_formal_pipeline,
+    get_schematic_pipeline,
+    get_simulation_pipeline,
+)
 from app.llm.provider import LLMProvider
 from app.models import ChatMessage, GenResult
 from app.pipeline.orchestrator import GenerateOrchestrator
@@ -11,7 +15,11 @@ from app.pipeline.orchestrator import GenerateOrchestrator
 
 def _orchestrator(llm, **kw):
     return GenerateOrchestrator(
-        llm, get_schematic_pipeline(), get_simulation_pipeline(), **kw
+        llm,
+        get_schematic_pipeline(),
+        get_simulation_pipeline(),
+        get_formal_pipeline(),
+        **kw,
     )
 
 

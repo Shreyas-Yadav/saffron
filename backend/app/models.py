@@ -3,7 +3,39 @@ crosses unit boundaries, so each unit can be understood and tested in isolation.
 """
 from __future__ import annotations
 
+from typing import Literal
+
 from pydantic import BaseModel, Field
+
+
+class FormalCheck(BaseModel):
+    """One rule the formal checker tried to prove about a design.
+
+    `kind="intent"` rules come from the LLM (what the circuit should *do*);
+    `kind="invariant"` rules are true of any well-formed circuit (no loops, no
+    accidental latches) regardless of intent.
+    """
+
+    name: str
+    kind: Literal["intent", "invariant"]
+    status: Literal["passed", "failed", "skipped", "error"]
+    detail: str = ""
+
+
+class FormalResult(BaseModel):
+    """Output of the formal-verification pipeline (Yosys SAT).
+
+    `status` is the overall verdict; `checks` is the per-rule breakdown. When an
+    intent rule is refuted, `counterexample` carries the failing input vector as a
+    WaveDrom diagram (rendered with the same panel as the simulation waveform).
+    """
+
+    status: Literal["proven", "refuted", "skipped", "error"]
+    bounded: bool = False  # True only for bounded (sequential) proofs
+    cycles: int | None = None
+    checks: list[FormalCheck] = Field(default_factory=list)
+    counterexample: dict | None = None
+    logs: str = ""
 
 
 class SchematicResult(BaseModel):
@@ -17,6 +49,8 @@ class SchematicResult(BaseModel):
     # Best-effort simulation result attached by the /synthesize route.
     wavedrom: dict | None = None
     sim_error: str | None = None
+    # Best-effort formal-verification result attached by the /synthesize route.
+    formal: FormalResult | None = None
 
 
 class SimResult(BaseModel):
@@ -40,6 +74,9 @@ class GenResult(BaseModel):
     top_module: str
     verilog: str
     explanation: str
+    # Intent assertions (boolean Verilog expressions over the module's ports) the
+    # formal checker can prove. Optional — empty means "invariants only".
+    properties: list[str] = Field(default_factory=list)
 
 
 class ChatMessage(BaseModel):
@@ -75,3 +112,5 @@ class GenerateOutcome(BaseModel):
     # or failed. `sim_error` explains a failure without blocking the schematic.
     wavedrom: dict | None = None
     sim_error: str | None = None
+    # Best-effort formal-verification result; null if it was skipped or errored.
+    formal: FormalResult | None = None

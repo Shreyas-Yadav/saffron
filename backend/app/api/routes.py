@@ -9,7 +9,9 @@ from ..models import ChatRequest, GenerateOutcome, SchematicResult, SynthesizeRe
 from ..pipeline.orchestrator import GenerateOrchestrator
 from ..pipeline.schematic import SchematicPipeline
 from ..pipeline.simulation import SimulationPipeline
+from ..pipeline.verification import FormalPipeline
 from .deps import (
+    get_formal_pipeline,
     get_orchestrator,
     get_schematic_pipeline,
     get_simulation_pipeline,
@@ -39,12 +41,15 @@ def synthesize(
     req: SynthesizeRequest,
     pipeline: SchematicPipeline = Depends(get_schematic_pipeline),
     simulation: SimulationPipeline = Depends(get_simulation_pipeline),
+    formal: FormalPipeline = Depends(get_formal_pipeline),
 ) -> SchematicResult:
     """Synthesize hand-written/edited Verilog into a schematic, plus a best-effort
-    waveform (combinational modules)."""
+    waveform and formal check. Edited Verilog carries no LLM intent properties, so
+    formal here runs the invariants (no loops / no accidental latches) only."""
     result = pipeline.build(req.verilog, req.top)
     if result.error is None and result.netlist_json:
         sim = simulation.run(req.verilog, result.netlist_json, req.top)
         result.wavedrom = sim.wavedrom
         result.sim_error = sim.error
+        result.formal = formal.run(req.verilog, result.netlist_json, req.top)
     return result

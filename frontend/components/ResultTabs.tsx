@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 
+import { FormalPanel } from "@/components/FormalPanel";
 import { SchematicPanel } from "@/components/SchematicPanel";
 import { WaveformPanel } from "@/components/WaveformPanel";
 import type { SchematicResult } from "@/lib/types";
@@ -11,7 +12,7 @@ interface Props {
   loading: boolean;
 }
 
-type Tab = "schematic" | "waveform";
+type Tab = "schematic" | "waveform" | "formal";
 
 export function ResultTabs({ result, loading }: Props) {
   const [tab, setTab] = useState<Tab>("schematic");
@@ -25,16 +26,23 @@ export function ResultTabs({ result, loading }: Props) {
         <TabButton active={tab === "waveform"} onClick={() => setTab("waveform")}>
           Waveform
         </TabButton>
+        <TabButton active={tab === "formal"} onClick={() => setTab("formal")}>
+          Formal
+        </TabButton>
       </div>
       <div className="min-h-0 flex-1">
-        {tab === "schematic" ? (
+        {tab === "schematic" && (
           <SchematicPanel result={result} loading={loading} />
-        ) : (
+        )}
+        {tab === "waveform" && (
           <WaveformPanel
             wavedrom={result?.wavedrom ?? null}
             simError={result?.sim_error ?? null}
             loading={loading}
           />
+        )}
+        {tab === "formal" && (
+          <FormalPanel formal={result?.formal ?? null} loading={loading} />
         )}
       </div>
     </div>

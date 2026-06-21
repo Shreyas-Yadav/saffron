@@ -55,6 +55,7 @@ export default function Home() {
         error: res.error,
         wavedrom: res.wavedrom,
         sim_error: res.sim_error,
+        formal: res.formal,
       });
     } catch (err) {
       setError(err instanceof Error ? err.message : "generation failed");
@@ -77,6 +78,7 @@ export default function Home() {
         error: err instanceof Error ? err.message : "request failed",
         wavedrom: null,
         sim_error: null,
+        formal: null,
       });
     } finally {
       setSynthLoading(false);

@@ -11,6 +11,23 @@ export interface WaveDrom {
   signal: WaveDromSignal[];
 }
 
+// One rule the formal checker tried to prove (intent = from the LLM; invariant =
+// well-formedness, true of any sane circuit).
+export interface FormalCheck {
+  name: string;
+  kind: "intent" | "invariant";
+  status: "passed" | "failed" | "skipped" | "error";
+  detail: string;
+}
+export interface FormalResult {
+  status: "proven" | "refuted" | "skipped" | "error";
+  bounded: boolean;
+  cycles: number | null;
+  checks: FormalCheck[];
+  counterexample: WaveDrom | null;
+  logs: string;
+}
+
 export interface SchematicResult {
   svg: string | null;
   renderer: string | null;
@@ -19,6 +36,7 @@ export interface SchematicResult {
   logs: string;
   wavedrom: WaveDrom | null;
   sim_error: string | null;
+  formal: FormalResult | null;
 }
 
 export interface SynthesizeRequest {
@@ -42,4 +60,5 @@ export interface GenerateOutcome {
   error: string | null;
   wavedrom: WaveDrom | null;
   sim_error: string | null;
+  formal: FormalResult | null;
 }

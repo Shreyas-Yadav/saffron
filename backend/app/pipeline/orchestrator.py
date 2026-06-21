@@ -7,10 +7,11 @@ fails synthesis, the tool error is fed back to the model and regeneration is ret
 """
 from __future__ import annotations
 
-from ..models import ChatMessage, GenerateOutcome, SimResult
+from ..models import ChatMessage, FormalResult, GenerateOutcome, SimResult
 from ..llm.provider import LLMProvider
 from .schematic import SchematicPipeline
 from .simulation import SimulationPipeline
+from .verification import FormalPipeline
 
 
 class GenerateOrchestrator:
@@ -19,11 +20,13 @@ class GenerateOrchestrator:
         llm: LLMProvider,
         schematic: SchematicPipeline,
         simulation: SimulationPipeline,
+        formal: FormalPipeline,
         max_attempts: int = 3,
     ):
         self._llm = llm
         self._schematic = schematic
         self._simulation = simulation
+        self._formal = formal
         self._max_attempts = max_attempts
 
     def generate(self, messages: list[ChatMessage]) -> GenerateOutcome:
@@ -39,11 +42,15 @@ class GenerateOrchestrator:
             schem = self._schematic.build(gen.verilog, gen.top_module)
             attempt += 1
 
-        # Simulation is best-effort: a waveform failure never blocks the schematic.
-        # The repair loop only targets synthesis (structure), not simulation.
+        # Simulation + formal are best-effort: neither blocks the schematic, and the
+        # repair loop only targets synthesis (structure), not these analyses.
         sim = SimResult()
+        formal: FormalResult | None = None
         if schem.error is None and schem.netlist_json:
             sim = self._simulation.run(gen.verilog, schem.netlist_json, gen.top_module)
+            formal = self._formal.run(
+                gen.verilog, schem.netlist_json, gen.top_module, gen.properties
+            )
 
         return GenerateOutcome(
             top_module=gen.top_module,
@@ -55,4 +62,5 @@ class GenerateOrchestrator:
             error=schem.error,
             wavedrom=sim.wavedrom,
             sim_error=sim.error,
+            formal=formal,
         )
