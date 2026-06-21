@@ -28,13 +28,22 @@ export interface FormalResult {
   logs: string;
 }
 
+// One gate on the critical path: cell type, incremental delay, cumulative time (ns).
+export interface PathStage {
+  cell: string;
+  delay_ns: number;
+  time_ns: number;
+}
+
 // Static timing: how fast the mapped circuit can run. `source` is "opensta" for a
 // real STA run, or "yosys-estimate" (area/cells only, no frequency) as a fallback.
 export interface TimingResult {
   clocked: boolean;
   max_frequency_mhz: number | null;
   critical_path_ns: number | null;
-  critical_path_cells: string[];
+  start_point: string | null;
+  end_point: string | null;
+  critical_path: PathStage[];
   area_um2: number | null;
   cell_count: number | null;
   source: "opensta" | "yosys-estimate";
