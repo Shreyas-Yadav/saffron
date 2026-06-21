@@ -7,6 +7,7 @@ from fastapi import APIRouter, Depends
 
 from ..models import ChatRequest, GenerateOutcome, SchematicResult, SynthesizeRequest
 from ..pipeline.orchestrator import GenerateOrchestrator
+from ..pipeline.sanitize import sanitize_verilog
 from ..pipeline.schematic import SchematicPipeline
 from ..pipeline.simulation import SimulationPipeline
 from ..pipeline.timing_pipeline import TimingPipeline
@@ -49,11 +50,14 @@ def synthesize(
     """Synthesize hand-written/edited Verilog into a schematic, plus a best-effort
     waveform, formal check, and timing analysis. Edited Verilog carries no LLM intent
     properties, so formal here runs the invariants (no loops / no latches) only."""
-    result = pipeline.build(req.verilog, req.top)
+    # Clean copy-paste artifacts (non-breaking spaces, smart quotes, ...) before any
+    # tool sees the code, then run every stage on the same cleaned source.
+    verilog = sanitize_verilog(req.verilog)
+    result = pipeline.build(verilog, req.top)
     if result.error is None and result.netlist_json:
-        sim = simulation.run(req.verilog, result.netlist_json, req.top)
+        sim = simulation.run(verilog, result.netlist_json, req.top)
         result.wavedrom = sim.wavedrom
         result.sim_error = sim.error
-        result.formal = formal.run(req.verilog, result.netlist_json, req.top)
-        result.timing = timing.run(req.verilog, result.netlist_json, req.top)
+        result.formal = formal.run(verilog, result.netlist_json, req.top)
+        result.timing = timing.run(verilog, result.netlist_json, req.top)
     return result

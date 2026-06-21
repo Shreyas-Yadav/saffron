@@ -15,6 +15,7 @@ from ..models import (
     TimingResult,
 )
 from ..llm.provider import LLMProvider
+from .sanitize import sanitize_verilog
 from .schematic import SchematicPipeline
 from .simulation import SimulationPipeline
 from .timing_pipeline import TimingPipeline
@@ -41,6 +42,7 @@ class GenerateOrchestrator:
     def generate(self, messages: list[ChatMessage]) -> GenerateOutcome:
         convo = list(messages)
         gen = self._llm.generate_verilog(convo)
+        gen.verilog = sanitize_verilog(gen.verilog)
         schem = self._schematic.build(gen.verilog, gen.top_module)
         attempt = 1
 
@@ -48,6 +50,7 @@ class GenerateOrchestrator:
             # Show the model its own failed code, then the tool error, and retry.
             convo = convo + [ChatMessage(role="assistant", content=gen.verilog)]
             gen = self._llm.generate_verilog(convo, repair_hint=schem.error)
+            gen.verilog = sanitize_verilog(gen.verilog)
             schem = self._schematic.build(gen.verilog, gen.top_module)
             attempt += 1
 
