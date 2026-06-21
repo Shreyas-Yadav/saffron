@@ -11,7 +11,7 @@ from __future__ import annotations
 import io
 from abc import ABC, abstractmethod
 
-from vcd.reader import TokenKind, tokenize
+from vcd.reader import TokenKind, VCDParseError, tokenize
 
 from .sandbox import Sandbox, SandboxError
 
@@ -30,7 +30,9 @@ class IcarusSimulator(Simulator):
         with self._sandbox.workspace() as ws:
             ws.write("design.v", verilog)
             ws.write("tb.v", testbench)
-            comp = ws.run(["iverilog", "-o", "sim", "design.v", "tb.v"])
+            # `-g2012`: parse the SystemVerilog-2012 subset so a design that synthesizes
+            # with yosys `-sv` also simulates here (keeps waveforms working for SV source).
+            comp = ws.run(["iverilog", "-g2012", "-o", "sim", "design.v", "tb.v"])
             if not comp.ok:
                 raise SandboxError(comp.stderr.strip() or "iverilog compile failed")
             run = ws.run(["vvp", "sim"])
@@ -55,21 +57,28 @@ def vcd_to_wavedrom(
     changes: dict[str, list[tuple[int, object]]] = {}
     now = 0
 
-    for tok in tokenize(io.BytesIO(vcd_text.encode())):
-        if tok.kind is TokenKind.VAR:
-            id_of.setdefault(tok.var.reference, tok.var.id_code)
-            width_of.setdefault(tok.var.id_code, tok.var.size)
-            changes.setdefault(tok.var.id_code, [])
-        elif tok.kind is TokenKind.CHANGE_TIME:
-            now = tok.time_change
-        elif tok.kind is TokenKind.CHANGE_SCALAR:
-            changes.setdefault(tok.scalar_change.id_code, []).append(
-                (now, str(tok.scalar_change.value))
-            )
-        elif tok.kind is TokenKind.CHANGE_VECTOR:
-            changes.setdefault(tok.vector_change.id_code, []).append(
-                (now, tok.vector_change.value)
-            )
+    # The strict VCD reader rejects some identifiers Icarus emits for richer designs
+    # (e.g. genvar/loop-unrolled scopes). Simulation is best-effort, so surface a
+    # parse failure as a SandboxError the pipeline already turns into SimResult(error)
+    # rather than letting it 500 the whole request.
+    try:
+        for tok in tokenize(io.BytesIO(vcd_text.encode())):
+            if tok.kind is TokenKind.VAR:
+                id_of.setdefault(tok.var.reference, tok.var.id_code)
+                width_of.setdefault(tok.var.id_code, tok.var.size)
+                changes.setdefault(tok.var.id_code, [])
+            elif tok.kind is TokenKind.CHANGE_TIME:
+                now = tok.time_change
+            elif tok.kind is TokenKind.CHANGE_SCALAR:
+                changes.setdefault(tok.scalar_change.id_code, []).append(
+                    (now, str(tok.scalar_change.value))
+                )
+            elif tok.kind is TokenKind.CHANGE_VECTOR:
+                changes.setdefault(tok.vector_change.id_code, []).append(
+                    (now, tok.vector_change.value)
+                )
+    except VCDParseError as exc:
+        raise SandboxError(f"could not parse simulation waveform: {exc}") from exc
 
     ids = [id_of[n] for n in names if n in id_of]
     times = sorted({t for i in ids for t, _ in changes.get(i, [])})

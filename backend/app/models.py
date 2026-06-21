@@ -8,6 +8,36 @@ from typing import Literal
 from pydantic import BaseModel, Field
 
 
+class ProcessStep(BaseModel):
+    """One student-facing step in the pipeline walkthrough."""
+
+    id: str
+    title: str
+    status: Literal["success", "warning", "error", "skipped"]
+    summary: str
+    details: list[str] = Field(default_factory=list)
+    technical: str | None = None
+
+
+class StepExplanation(BaseModel):
+    """An on-demand, LLM-written plain-language deepening of one ProcessStep.
+
+    Augments (never replaces) the deterministic template text; written for a student
+    learning digital design.
+    """
+
+    headline: str
+    points: list[str] = Field(default_factory=list)
+
+
+class ExplainStepRequest(BaseModel):
+    """Ask the LLM to explain one step in the context of the current circuit."""
+
+    verilog: str
+    top_module: str | None = None
+    step: ProcessStep
+
+
 class FormalCheck(BaseModel):
     """One rule the formal checker tried to prove about a design.
 
@@ -74,6 +104,8 @@ class SchematicResult(BaseModel):
     formal: FormalResult | None = None
     # Best-effort static-timing result attached by the /synthesize route.
     timing: TimingResult | None = None
+    # Student-facing explanation of the steps the system ran.
+    steps: list[ProcessStep] = Field(default_factory=list)
 
 
 class SimResult(BaseModel):
@@ -139,3 +171,5 @@ class GenerateOutcome(BaseModel):
     formal: FormalResult | None = None
     # Best-effort static-timing result; null if it was skipped or errored.
     timing: TimingResult | None = None
+    # Student-facing explanation of the steps the system ran.
+    steps: list[ProcessStep] = Field(default_factory=list)

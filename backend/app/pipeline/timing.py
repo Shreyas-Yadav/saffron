@@ -24,7 +24,7 @@ from .testbench import Port, find_clock
 # Map to real cells AND report area in one yosys run (area is always available, even
 # when OpenSTA isn't). NOT the schematic's `prep` flow — that leaves untimed logic.
 _MAP_SCRIPT = (
-    "read_verilog design.v; synth -top {top} -flatten; "
+    "read_verilog -sv design.v; synth -top {top} -flatten; "
     "dfflibmap -liberty nangate.lib; abc -liberty nangate.lib; opt; clean; "
     "tee -o stat.txt stat -liberty nangate.lib; "
     "write_verilog -noattr mapped.v"

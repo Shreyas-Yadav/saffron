@@ -8,7 +8,13 @@ from functools import lru_cache
 from pathlib import Path
 
 from ..config import get_settings
-from ..llm.provider import GeminiProvider, LLMProvider
+from ..llm.provider import (
+    AnthropicProvider,
+    AnthropicVertexProvider,
+    GeminiProvider,
+    LLMError,
+    LLMProvider,
+)
 from ..pipeline.formal import YosysFormalVerifier
 from ..pipeline.orchestrator import GenerateOrchestrator
 from ..pipeline.sandbox import LocalSandbox, Sandbox, VerilogGuard
@@ -32,8 +38,21 @@ def get_sandbox() -> Sandbox:
 
 @lru_cache
 def get_llm_provider() -> LLMProvider:
+    # The one place that picks an LLM backend. Swap via LLM_PROVIDER in .env; nothing
+    # else in the app references a concrete provider.
     settings = get_settings()
-    return GeminiProvider(settings.gemini_api_key, settings.gemini_model)
+    if settings.llm_provider == "anthropic":
+        return AnthropicProvider(settings.anthropic_api_key, settings.anthropic_model)
+    if settings.llm_provider == "vertex":
+        return AnthropicVertexProvider(
+            settings.vertex_project_id, settings.vertex_region, settings.vertex_model
+        )
+    if settings.llm_provider == "gemini":
+        return GeminiProvider(settings.gemini_api_key, settings.gemini_model)
+    raise LLMError(
+        f"Unknown LLM_PROVIDER '{settings.llm_provider}'. "
+        "Use 'gemini', 'anthropic', or 'vertex'."
+    )
 
 
 @lru_cache

@@ -11,6 +11,27 @@ export interface WaveDrom {
   signal: WaveDromSignal[];
 }
 
+export interface ProcessStep {
+  id: string;
+  title: string;
+  status: "success" | "warning" | "error" | "skipped";
+  summary: string;
+  details: string[];
+  technical: string | null;
+}
+
+// On-demand, LLM-written plain-language deepening of one step (see /api/explain-step).
+export interface StepExplanation {
+  headline: string;
+  points: string[];
+}
+
+export interface ExplainStepRequest {
+  verilog: string;
+  top_module?: string | null;
+  step: ProcessStep;
+}
+
 // One rule the formal checker tried to prove (intent = from the LLM; invariant =
 // well-formedness, true of any sane circuit).
 export interface FormalCheck {
@@ -52,6 +73,7 @@ export interface SchematicResult {
   sim_error: string | null;
   formal: FormalResult | null;
   timing: TimingResult | null;
+  steps: ProcessStep[];
 }
 
 export interface SynthesizeRequest {
@@ -77,4 +99,5 @@ export interface GenerateOutcome {
   sim_error: string | null;
   formal: FormalResult | null;
   timing: TimingResult | null;
+  steps: ProcessStep[];
 }

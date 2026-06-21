@@ -15,9 +15,18 @@ from ..models import (
     TimingResult,
 )
 from ..llm.provider import LLMProvider
-from .sanitize import sanitize_verilog
+from .sanitize import sanitize_verilog_with_report
 from .schematic import SchematicPipeline
 from .simulation import SimulationPipeline
+from .steps import (
+    formal_step,
+    generation_step,
+    repair_attempt_step,
+    sanitize_step,
+    schematic_step,
+    simulation_step,
+    timing_step,
+)
 from .timing_pipeline import TimingPipeline
 from .verification import FormalPipeline
 
@@ -30,7 +39,7 @@ class GenerateOrchestrator:
         simulation: SimulationPipeline,
         formal: FormalPipeline,
         timing: TimingPipeline,
-        max_attempts: int = 3,
+        max_attempts: int = 5,
     ):
         self._llm = llm
         self._schematic = schematic
@@ -42,15 +51,18 @@ class GenerateOrchestrator:
     def generate(self, messages: list[ChatMessage]) -> GenerateOutcome:
         convo = list(messages)
         gen = self._llm.generate_verilog(convo)
-        gen.verilog = sanitize_verilog(gen.verilog)
+        gen.verilog, report = sanitize_verilog_with_report(gen.verilog)
+        steps = [generation_step(gen.explanation), sanitize_step(report)]
         schem = self._schematic.build(gen.verilog, gen.top_module)
         attempt = 1
 
         while schem.error and attempt < self._max_attempts:
+            steps.append(repair_attempt_step(attempt, schem.error))
             # Show the model its own failed code, then the tool error, and retry.
             convo = convo + [ChatMessage(role="assistant", content=gen.verilog)]
             gen = self._llm.generate_verilog(convo, repair_hint=schem.error)
-            gen.verilog = sanitize_verilog(gen.verilog)
+            gen.verilog, report = sanitize_verilog_with_report(gen.verilog)
+            steps.append(sanitize_step(report))
             schem = self._schematic.build(gen.verilog, gen.top_module)
             attempt += 1
 
@@ -66,6 +78,15 @@ class GenerateOrchestrator:
             )
             timing = self._timing.run(gen.verilog, schem.netlist_json, gen.top_module)
 
+        steps.append(schematic_step(schem.error, attempts=attempt))
+        steps.extend(
+            [
+                simulation_step(sim),
+                formal_step(formal),
+                timing_step(timing),
+            ]
+        )
+
         return GenerateOutcome(
             top_module=gen.top_module,
             verilog=gen.verilog,
@@ -78,4 +99,5 @@ class GenerateOrchestrator:
             sim_error=sim.error,
             formal=formal,
             timing=timing,
+            steps=steps,
         )

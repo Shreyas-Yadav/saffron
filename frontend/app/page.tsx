@@ -57,6 +57,7 @@ export default function Home() {
         sim_error: res.sim_error,
         formal: res.formal,
         timing: res.timing,
+        steps: res.steps,
       });
     } catch (err) {
       setError(err instanceof Error ? err.message : "generation failed");
@@ -81,6 +82,7 @@ export default function Home() {
         sim_error: null,
         formal: null,
         timing: null,
+        steps: [],
       });
     } finally {
       setSynthLoading(false);
@@ -142,7 +144,11 @@ export default function Home() {
 
         {/* Right: schematic + waveform tabs */}
         <section className="overflow-hidden">
-          <ResultTabs result={result} loading={synthLoading || genLoading} />
+          <ResultTabs
+            result={result}
+            loading={synthLoading || genLoading}
+            verilog={verilog}
+          />
         </section>
       </div>
     </main>

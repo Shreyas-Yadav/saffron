@@ -5,6 +5,7 @@ description = "Add your description here"
 readme = "README.md"
 requires-python = ">=3.12"
 dependencies = [
+    "anthropic[vertex]>=0.40.0",
     "fastapi>=0.138.0",
     "google-genai>=2.9.0",
     "pydantic>=2.13.4",

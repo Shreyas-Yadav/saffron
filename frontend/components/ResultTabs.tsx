@@ -4,6 +4,7 @@ import { useState } from "react";
 
 import { FormalPanel } from "@/components/FormalPanel";
 import { SchematicPanel } from "@/components/SchematicPanel";
+import { StepsPanel } from "@/components/StepsPanel";
 import { TimingPanel } from "@/components/TimingPanel";
 import { WaveformPanel } from "@/components/WaveformPanel";
 import type { SchematicResult } from "@/lib/types";
@@ -11,16 +12,22 @@ import type { SchematicResult } from "@/lib/types";
 interface Props {
   result: SchematicResult | null;
   loading: boolean;
+  // The current circuit source — sent alongside a step when asking the LLM to
+  // explain it in plain language.
+  verilog: string;
 }
 
-type Tab = "schematic" | "waveform" | "formal" | "timing";
+type Tab = "steps" | "schematic" | "waveform" | "formal" | "timing";
 
-export function ResultTabs({ result, loading }: Props) {
-  const [tab, setTab] = useState<Tab>("schematic");
+export function ResultTabs({ result, loading, verilog }: Props) {
+  const [tab, setTab] = useState<Tab>("steps");
 
   return (
     <div className="flex h-full flex-col">
       <div className="flex gap-1 border-b border-neutral-800 px-3 py-2">
+        <TabButton active={tab === "steps"} onClick={() => setTab("steps")}>
+          Steps
+        </TabButton>
         <TabButton active={tab === "schematic"} onClick={() => setTab("schematic")}>
           Schematic
         </TabButton>
@@ -35,6 +42,13 @@ export function ResultTabs({ result, loading }: Props) {
         </TabButton>
       </div>
       <div className="min-h-0 flex-1">
+        {tab === "steps" && (
+          <StepsPanel
+            steps={result?.steps ?? null}
+            loading={loading}
+            verilog={verilog}
+          />
+        )}
         {tab === "schematic" && (
           <SchematicPanel result={result} loading={loading} />
         )}

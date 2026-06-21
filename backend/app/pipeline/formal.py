@@ -122,7 +122,7 @@ class YosysFormalVerifier(FormalVerifier):
             self._yosys_invariant(
                 verilog,
                 name="no combinational loops or multiple drivers",
-                script=f"read_verilog design.v; prep -top {top}; check -assert",
+                script=f"read_verilog -sv design.v; prep -top {top}; check -assert",
                 fail_detail="combinational loop or multiply-driven net detected",
             )
         )
@@ -132,7 +132,7 @@ class YosysFormalVerifier(FormalVerifier):
                 verilog,
                 name="no accidental latches",
                 script=(
-                    f"read_verilog design.v; prep -top {top}; "
+                    f"read_verilog -sv design.v; prep -top {top}; "
                     "proc; opt; select -assert-none t:$dlatch"
                 ),
                 fail_detail="inferred latch — an `always @*` block is missing an assignment",

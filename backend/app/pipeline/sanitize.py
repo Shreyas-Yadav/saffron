@@ -17,6 +17,8 @@ characters here would be exactly the bug this module exists to fix.
 """
 from __future__ import annotations
 
+from .steps import SanitizeReport
+
 # Unicode spaces that render like a normal space but aren't (the usual culprit is
 # U+00A0, the non-breaking space). All map to a plain ASCII space.
 _SPACE_LIKE = [
@@ -39,3 +41,27 @@ _TRANSLATE: dict[int, str | None] = {
 def sanitize_verilog(text: str) -> str:
     """Return `text` with copy-paste look-alike characters normalized to ASCII."""
     return text.translate(_TRANSLATE)
+
+
+def sanitize_verilog_with_report(text: str) -> tuple[str, SanitizeReport]:
+    """Return normalized text plus a small report for the Steps tab."""
+    replacements = 0
+    removed = 0
+    out: list[str] = []
+    for ch in text:
+        cp = ord(ch)
+        if cp not in _TRANSLATE:
+            out.append(ch)
+            continue
+        mapped = _TRANSLATE[cp]
+        if mapped is None:
+            removed += 1
+            continue
+        replacements += 1
+        out.append(mapped)
+    clean = "".join(out)
+    return clean, SanitizeReport(
+        changed=clean != text,
+        replacements=replacements,
+        removed=removed,
+    )

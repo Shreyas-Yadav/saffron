@@ -39,7 +39,10 @@ class YosysSynthesizer(Synthesizer):
 
     def to_netlist(self, verilog: str, top: str | None = None) -> str:
         prep = f"prep -top {top}" if top else "hierarchy -auto-top; prep"
-        script = f"read_verilog design.v; {prep}; write_json netlist.json"
+        # `-sv`: accept the synthesizable SystemVerilog subset (logic, always_comb/_ff,
+        # inline `for (int i ...)`), which LLMs emit by default. Mirrors formal.py's
+        # reader so the same source parses across synthesis, simulation, and formal.
+        script = f"read_verilog -sv design.v; {prep}; write_json netlist.json"
         with self._sandbox.workspace() as ws:
             ws.write("design.v", verilog)
             result = ws.run(["yosys", "-q", "-p", script])

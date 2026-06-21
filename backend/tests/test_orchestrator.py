@@ -9,7 +9,7 @@ from app.api.deps import (
     get_simulation_pipeline,
 )
 from app.llm.provider import LLMProvider
-from app.models import ChatMessage, GenResult, TimingResult
+from app.models import ChatMessage, GenResult, StepExplanation, TimingResult
 from app.pipeline.orchestrator import GenerateOrchestrator
 
 
@@ -49,6 +49,9 @@ class FakeLLM(LLMProvider):
         out = self._outputs[min(self.calls, len(self._outputs) - 1)]
         self.calls += 1
         return out
+
+    def explain_step(self, verilog, top_module, step) -> StepExplanation:
+        return StepExplanation(headline="x", points=[])
 
 
 def _gen(verilog: str) -> GenResult:

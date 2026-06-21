@@ -2,8 +2,10 @@
 // functions, never on `fetch` directly, so the transport can change in one place.
 import type {
   ChatMessage,
+  ExplainStepRequest,
   GenerateOutcome,
   SchematicResult,
+  StepExplanation,
   SynthesizeRequest,
 } from "./types";
 
@@ -38,4 +40,10 @@ export function synthesize(
 
 export function chat(messages: ChatMessage[]): Promise<GenerateOutcome> {
   return postJSON<GenerateOutcome>("/api/chat", { messages });
+}
+
+export function explainStep(
+  req: ExplainStepRequest,
+): Promise<StepExplanation> {
+  return postJSON<StepExplanation>("/api/explain-step", req);
 }

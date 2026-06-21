@@ -5,15 +5,32 @@ from __future__ import annotations
 
 from fastapi import APIRouter, Depends
 
-from ..models import ChatRequest, GenerateOutcome, SchematicResult, SynthesizeRequest
+from ..llm.provider import LLMProvider
+from ..models import (
+    ChatRequest,
+    ExplainStepRequest,
+    GenerateOutcome,
+    SchematicResult,
+    StepExplanation,
+    SynthesizeRequest,
+)
 from ..pipeline.orchestrator import GenerateOrchestrator
-from ..pipeline.sanitize import sanitize_verilog
+from ..pipeline.sanitize import sanitize_verilog_with_report
 from ..pipeline.schematic import SchematicPipeline
 from ..pipeline.simulation import SimulationPipeline
+from ..pipeline.steps import (
+    formal_step,
+    sanitize_step,
+    schematic_step,
+    simulation_step,
+    skipped_step,
+    timing_step,
+)
 from ..pipeline.timing_pipeline import TimingPipeline
 from ..pipeline.verification import FormalPipeline
 from .deps import (
     get_formal_pipeline,
+    get_llm_provider,
     get_orchestrator,
     get_schematic_pipeline,
     get_simulation_pipeline,
@@ -52,12 +69,41 @@ def synthesize(
     properties, so formal here runs the invariants (no loops / no latches) only."""
     # Clean copy-paste artifacts (non-breaking spaces, smart quotes, ...) before any
     # tool sees the code, then run every stage on the same cleaned source.
-    verilog = sanitize_verilog(req.verilog)
+    verilog, report = sanitize_verilog_with_report(req.verilog)
+    steps = [sanitize_step(report)]
     result = pipeline.build(verilog, req.top)
+    steps.append(schematic_step(result.error))
     if result.error is None and result.netlist_json:
         sim = simulation.run(verilog, result.netlist_json, req.top)
         result.wavedrom = sim.wavedrom
         result.sim_error = sim.error
         result.formal = formal.run(verilog, result.netlist_json, req.top)
         result.timing = timing.run(verilog, result.netlist_json, req.top)
+        steps.extend(
+            [
+                simulation_step(sim),
+                formal_step(result.formal),
+                timing_step(result.timing),
+            ]
+        )
+    else:
+        steps.extend(
+            [
+                skipped_step("simulate", "Simulated example inputs", "synthesis failed"),
+                skipped_step("formal", "Checked formal rules", "synthesis failed"),
+                skipped_step("timing", "Estimated speed and area", "synthesis failed"),
+            ]
+        )
+    result.steps = steps
     return result
+
+
+@router.post("/explain-step", response_model=StepExplanation)
+def explain_step(
+    req: ExplainStepRequest,
+    llm: LLMProvider = Depends(get_llm_provider),
+) -> StepExplanation:
+    """On-demand, plain-language deepening of one pipeline step for a student, tailored
+    to the current circuit. Additive: the frontend already shows the deterministic
+    template. LLMError (e.g. missing key) is surfaced as 502 by the app handler."""
+    return llm.explain_step(req.verilog, req.top_module, req.step)
