@@ -15,6 +15,7 @@ from ..llm.provider import (
     LLMError,
     LLMProvider,
 )
+from ..pipeline.agentic import AgenticOrchestrator
 from ..pipeline.formal import YosysFormalVerifier
 from ..pipeline.orchestrator import GenerateOrchestrator
 from ..pipeline.sandbox import LocalSandbox, Sandbox, VerilogGuard
@@ -102,4 +103,51 @@ def get_orchestrator() -> GenerateOrchestrator:
         simulation=get_simulation_pipeline(),
         formal=get_formal_pipeline(),
         timing=get_timing_pipeline(),
+    )
+
+
+def _build_claude_client(settings) -> tuple[object, str, str]:
+    """Construct a raw Claude client for the agentic tool-use loop, plus its model and
+    a human label. Tool use is Claude-specific, so agentic mode requires a Claude
+    backend; Gemini is rejected with a clear message."""
+    if settings.llm_provider == "anthropic":
+        if not settings.anthropic_api_key:
+            raise LLMError(
+                "ANTHROPIC_API_KEY is not set. Add it to backend/.env (see .env.example)."
+            )
+        from anthropic import Anthropic
+
+        return Anthropic(api_key=settings.anthropic_api_key), settings.anthropic_model, "Claude (Anthropic API)"
+    if settings.llm_provider == "vertex":
+        if not settings.vertex_project_id:
+            raise LLMError(
+                "VERTEX_PROJECT_ID is not set. Add it to backend/.env (see .env.example) "
+                "and run `gcloud auth application-default login`."
+            )
+        from anthropic import AnthropicVertex
+
+        client = AnthropicVertex(
+            project_id=settings.vertex_project_id, region=settings.vertex_region
+        )
+        return client, settings.vertex_model, "Claude (Vertex)"
+    raise LLMError(
+        f"Agentic mode requires a Claude backend, but LLM_PROVIDER is "
+        f"'{settings.llm_provider}'. Set LLM_PROVIDER to 'anthropic' or 'vertex'."
+    )
+
+
+def get_agentic_orchestrator() -> AgenticOrchestrator:
+    # Not cached, for the same key-validation reason as get_orchestrator: the client is
+    # built per request so a missing/rotated key isn't cached as a permanent failure.
+    settings = get_settings()
+    client, model, label = _build_claude_client(settings)
+    return AgenticOrchestrator(
+        client=client,
+        model=model,
+        schematic=get_schematic_pipeline(),
+        simulation=get_simulation_pipeline(),
+        formal=get_formal_pipeline(),
+        timing=get_timing_pipeline(),
+        max_turns=settings.agentic_max_turns,
+        label=label,
     )

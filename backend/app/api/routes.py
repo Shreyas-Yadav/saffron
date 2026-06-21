@@ -14,6 +14,7 @@ from ..models import (
     StepExplanation,
     SynthesizeRequest,
 )
+from ..pipeline.agentic import AgenticOrchestrator
 from ..pipeline.orchestrator import GenerateOrchestrator
 from ..pipeline.sanitize import sanitize_verilog_with_report
 from ..pipeline.schematic import SchematicPipeline
@@ -29,6 +30,7 @@ from ..pipeline.steps import (
 from ..pipeline.timing_pipeline import TimingPipeline
 from ..pipeline.verification import FormalPipeline
 from .deps import (
+    get_agentic_orchestrator,
     get_formal_pipeline,
     get_llm_provider,
     get_orchestrator,
@@ -53,6 +55,18 @@ def chat(
     """Generate a module from the conversation, synthesize it, and auto-repair on
     tool errors (up to N attempts). Returns code AND schematic together. LLMError
     (e.g. missing key) is surfaced as 502 by the app exception handler."""
+    return orchestrator.generate(req.messages)
+
+
+@router.post("/chat-agentic", response_model=GenerateOutcome)
+def chat_agentic(
+    req: ChatRequest,
+    orchestrator: AgenticOrchestrator = Depends(get_agentic_orchestrator),
+) -> GenerateOutcome:
+    """Agentic counterpart to /chat: Claude is given the pipeline as tools and drives
+    the generate/synthesize/repair/verify loop itself, then submits the module. Returns
+    the same GenerateOutcome shape as /chat. Requires a Claude backend; AgenticError and
+    LLMError (e.g. missing key, turn limit) surface as 502 via the app exception handler."""
     return orchestrator.generate(req.messages)
 
 

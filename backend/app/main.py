@@ -7,14 +7,16 @@ from fastapi.responses import JSONResponse
 
 from .api.routes import router
 from .llm.provider import LLMError
+from .pipeline.agentic import AgenticError
 
 app = FastAPI(title="Saffron", description="AI hardware design assistant")
 
 
 @app.exception_handler(LLMError)
-def _llm_error_handler(_: Request, exc: LLMError) -> JSONResponse:
-    # Misconfigured key / upstream failure surfaces as a clean 502, even when the
-    # provider fails to construct during dependency resolution.
+@app.exception_handler(AgenticError)
+def _llm_error_handler(_: Request, exc: Exception) -> JSONResponse:
+    # Misconfigured key / upstream failure / agent turn-limit surfaces as a clean 502,
+    # even when the provider fails to construct during dependency resolution.
     return JSONResponse(status_code=502, content={"detail": str(exc)})
 
 # Dev CORS: allow the Next.js dev server.

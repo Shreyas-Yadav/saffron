@@ -29,6 +29,10 @@ class Settings:
     vertex_project_id: str | None
     vertex_region: str
     vertex_model: str
+    # Agentic mode (the /chat-agentic endpoint): Claude drives the pipeline via tool
+    # use. Requires a Claude backend ("anthropic" or "vertex"); `max_turns` bounds the
+    # tool-use loop the way `max_attempts` bounds the deterministic repair loop.
+    agentic_max_turns: int
 
 
 def get_settings() -> Settings:
@@ -41,4 +45,5 @@ def get_settings() -> Settings:
         vertex_project_id=os.getenv("VERTEX_PROJECT_ID"),
         vertex_region=os.getenv("VERTEX_REGION", "global"),
         vertex_model=os.getenv("VERTEX_MODEL", "claude-opus-4-8"),
+        agentic_max_turns=int(os.getenv("AGENTIC_MAX_TURNS", "12")),
     )
