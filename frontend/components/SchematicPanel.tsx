@@ -63,14 +63,16 @@ export function SchematicPanel({ result, loading }: Props) {
 
 const HILITE = "#ea580c"; // orange-600 — the "hot" critical path
 
-function ZoomableSvg({
+// A pan/zoom/fit viewer for an SVG string. Reused by the Timing tab for the
+// critical-path schematic. `highlights`/`caption` are optional emphasis.
+export function ZoomableSvg({
   svg,
-  highlights,
-  caption,
+  highlights = [],
+  caption = null,
 }: {
   svg: string;
-  highlights: string[];
-  caption: string | null;
+  highlights?: string[];
+  caption?: string | null;
 }) {
   const container = useRef<HTMLDivElement>(null);
   const content = useRef<HTMLDivElement>(null);

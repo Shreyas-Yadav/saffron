@@ -95,10 +95,32 @@ class OpenStaTimingAnalyzer(TimingAnalyzer):
                     error=(sta.stderr.strip() or "OpenSTA failed")[:300],
                 )
 
-            return _parse_sta(
+            result = _parse_sta(
                 sta.stdout, period=self._period, clocked=clocked,
                 area=area, cells=cells,
             )
+            # Render a schematic of just the critical path (its gates + wiring) from
+            # the mapped netlist. Best-effort: a render failure leaves the rest intact.
+            instances = [s.instance for s in result.critical_path if s.instance]
+            if instances:
+                result.critical_path_svg = self._render_path(ws, top, instances)
+            return result
+
+    def _render_path(self, ws, top: str, instances: list[str]) -> str | None:
+        """`yosys show` of only the path cells -> an SVG where every gate and wire
+        shown belongs to the critical path. Needs graphviz `dot` (which yosys execs)."""
+        selection = " ".join(f"c:{i}" for i in instances)
+        script = (
+            f"read_verilog mapped.v; "
+            f"show -format svg -prefix cp -notitle {selection}"
+        )
+        try:
+            res = ws.run(["yosys", "-p", script], timeout=60)
+            if not res.ok:
+                return None
+            return ws.read("cp.svg")
+        except (SandboxError, FileNotFoundError, OSError):
+            return None
 
 
 def _run_tcl(top: str, clock: Port | None, period: float) -> str:
@@ -153,7 +175,10 @@ def _parse_path(text: str) -> list[PathStage]:
             merged[-1][1] = round(t, 4)
         else:
             merged.append([round(d, 4), round(t, 4), inst, cell])
-    return [PathStage(cell=cell, delay_ns=d, time_ns=t) for d, t, _, cell in merged]
+    return [
+        PathStage(cell=cell, delay_ns=d, time_ns=t, instance=inst)
+        for d, t, inst, cell in merged
+    ]
 
 
 def _parse_sta(

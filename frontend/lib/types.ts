@@ -44,6 +44,7 @@ export interface TimingResult {
   start_point: string | null;
   end_point: string | null;
   critical_path: PathStage[];
+  critical_path_svg: string | null;
   area_um2: number | null;
   cell_count: number | null;
   source: "opensta" | "yosys-estimate";

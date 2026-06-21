@@ -40,11 +40,13 @@ class FormalResult(BaseModel):
 
 class PathStage(BaseModel):
     """One gate along the critical path: its cell type, the incremental delay it
-    adds (ns), and the cumulative arrival time at its output (ns)."""
+    adds (ns), and the cumulative arrival time at its output (ns). `instance` is the
+    netlist instance name (used to render the path; not shown to the user)."""
 
     cell: str
     delay_ns: float
     time_ns: float
+    instance: str = ""
 
 
 class TimingResult(BaseModel):
@@ -67,6 +69,9 @@ class TimingResult(BaseModel):
     start_point: str | None = None
     end_point: str | None = None
     critical_path: list[PathStage] = Field(default_factory=list)
+    # A schematic of *just* the critical path (the path gates + their wiring),
+    # rendered from the mapped netlist with `yosys show`. Null if it couldn't render.
+    critical_path_svg: str | None = None
     area_um2: float | None = None
     cell_count: int | None = None
     source: Literal["opensta", "yosys-estimate"] = "opensta"
