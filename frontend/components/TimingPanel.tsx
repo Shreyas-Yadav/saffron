@@ -1,7 +1,6 @@
 // Pure presentational static-timing report. Headline is max clock frequency for a
 // clocked design (or propagation delay for combinational), plus the critical-path
 // cell chain and area. Falls back to an area-only readout when OpenSTA is offline.
-import { ZoomableSvg } from "@/components/SchematicPanel";
 import type { PathStage, TimingResult } from "@/lib/types";
 
 interface Props {
@@ -58,23 +57,6 @@ export function TimingPanel({ timing, loading }: Props) {
             </p>
           )}
           <CriticalPath stages={timing.critical_path} />
-        </div>
-      )}
-
-      {/* Faithful schematic of just the path: every gate AND wire shown is on the
-          critical path (rendered from the timed netlist). */}
-      {timing.critical_path_svg && (
-        <div className="mt-6">
-          <h3 className="mb-1 text-sm font-medium text-neutral-200">
-            Critical path schematic
-          </h3>
-          <p className="mb-2 text-xs text-neutral-500">
-            The mapped (timed) gates and wiring on the slowest path — drag to pan,
-            scroll to zoom.
-          </p>
-          <div className="h-96 rounded-md border border-neutral-800 bg-white">
-            <ZoomableSvg svg={timing.critical_path_svg} />
-          </div>
         </div>
       )}
 
