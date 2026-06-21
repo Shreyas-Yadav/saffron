@@ -38,6 +38,27 @@ class FormalResult(BaseModel):
     logs: str = ""
 
 
+class TimingResult(BaseModel):
+    """Output of static timing analysis: how fast the mapped circuit can run.
+
+    The design is synthesized to a real standard-cell library (Nangate45) and timed.
+    For a **clocked** design, `max_frequency_mhz` is the fastest the clock can run;
+    for a **combinational** one it's null and `critical_path_ns` is the input→output
+    propagation delay. `source` records whether OpenSTA produced the numbers or we
+    fell back to a yosys-only area/cell estimate (no max frequency).
+    """
+
+    clocked: bool = False
+    max_frequency_mhz: float | None = None
+    critical_path_ns: float | None = None
+    critical_path_cells: list[str] = Field(default_factory=list)
+    area_um2: float | None = None
+    cell_count: int | None = None
+    source: Literal["opensta", "yosys-estimate"] = "opensta"
+    error: str | None = None
+    logs: str = ""
+
+
 class SchematicResult(BaseModel):
     """Output of the synthesis + render pipeline."""
 
@@ -51,6 +72,8 @@ class SchematicResult(BaseModel):
     sim_error: str | None = None
     # Best-effort formal-verification result attached by the /synthesize route.
     formal: FormalResult | None = None
+    # Best-effort static-timing result attached by the /synthesize route.
+    timing: TimingResult | None = None
 
 
 class SimResult(BaseModel):
@@ -114,3 +137,5 @@ class GenerateOutcome(BaseModel):
     sim_error: str | None = None
     # Best-effort formal-verification result; null if it was skipped or errored.
     formal: FormalResult | None = None
+    # Best-effort static-timing result; null if it was skipped or errored.
+    timing: TimingResult | None = None

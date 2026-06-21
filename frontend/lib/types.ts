@@ -28,6 +28,20 @@ export interface FormalResult {
   logs: string;
 }
 
+// Static timing: how fast the mapped circuit can run. `source` is "opensta" for a
+// real STA run, or "yosys-estimate" (area/cells only, no frequency) as a fallback.
+export interface TimingResult {
+  clocked: boolean;
+  max_frequency_mhz: number | null;
+  critical_path_ns: number | null;
+  critical_path_cells: string[];
+  area_um2: number | null;
+  cell_count: number | null;
+  source: "opensta" | "yosys-estimate";
+  error: string | null;
+  logs: string;
+}
+
 export interface SchematicResult {
   svg: string | null;
   renderer: string | null;
@@ -37,6 +51,7 @@ export interface SchematicResult {
   wavedrom: WaveDrom | null;
   sim_error: string | null;
   formal: FormalResult | null;
+  timing: TimingResult | null;
 }
 
 export interface SynthesizeRequest {
@@ -61,4 +76,5 @@ export interface GenerateOutcome {
   wavedrom: WaveDrom | null;
   sim_error: string | null;
   formal: FormalResult | null;
+  timing: TimingResult | null;
 }

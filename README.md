@@ -12,6 +12,17 @@ brew install yosys icarus-verilog graphviz node   # EDA toolchain + Node
 npm install -g netlistsvg                          # yosys JSON → SVG schematic
 ```
 
+**Optional — static timing analysis (OpenSTA via Docker).** Timing is best-effort:
+without it you still get the schematic, waveform, and formal results, and the Timing
+tab degrades to a yosys area/cell estimate. To enable real max-frequency/critical-path
+analysis, install Docker and pull the image (the Nangate45 library is already vendored
+in `backend/fixtures/liberty/`):
+
+```bash
+docker pull --platform linux/amd64 openroad/opensta   # amd64 runs under emulation on Apple Silicon
+docker run --rm --platform linux/amd64 openroad/opensta -version   # sanity check
+```
+
 ## Backend (FastAPI, Python 3.12 via uv)
 
 ```bash
@@ -48,9 +59,22 @@ wired in one composition root (`backend/app/api/deps.py`).
   testbench from the netlist ports (combinational sweep, or clocked stimulus for
   sequential modules — chosen automatically), simulate with Icarus, convert VCD →
   WaveDrom. Narrow signals render per-bit; wide datapaths as value segments.
+- `pipeline/formal.py` + `verification.py` — `FormalVerifier` (yosys SAT). Proves
+  LLM-emitted intent assertions for **all** inputs (combinational) — refutations
+  render as a counterexample waveform — plus intent-independent invariants (no
+  combinational loops, no accidental latches) on every design.
+- `pipeline/timing.py` + `timing_pipeline.py` — `TimingAnalyzer` (`OpenStaTiming‑
+  Analyzer`). Maps to the Nangate45 cell library with yosys, then times the critical
+  path with OpenSTA (in Docker) → max frequency / critical path / area. Degrades to a
+  yosys area estimate when Docker is absent.
+
+Every analysis stage is best-effort and additive: a formal/timing/sim failure surfaces
+in its own tab and never blocks the schematic. The repair loop targets synthesis only.
 
 ## Status
 
 - [x] Toolchain spike, synthesis pipeline, schematic in browser
 - [x] LLM generation + auto-repair loop
 - [x] Simulation → waveform — combinational **and** sequential (clock/reset/enable)
+- [x] Formal verification (yosys SAT) — intent proofs + invariants + counterexamples
+- [x] Static timing analysis (OpenSTA) — max frequency, critical path, area

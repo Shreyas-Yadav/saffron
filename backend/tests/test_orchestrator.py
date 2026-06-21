@@ -9,8 +9,16 @@ from app.api.deps import (
     get_simulation_pipeline,
 )
 from app.llm.provider import LLMProvider
-from app.models import ChatMessage, GenResult
+from app.models import ChatMessage, GenResult, TimingResult
 from app.pipeline.orchestrator import GenerateOrchestrator
+
+
+class _StubTiming:
+    """Timing runs OpenSTA in Docker (slow, emulated); the repair-loop tests don't
+    exercise it, so stub it out to keep them fast and Docker-independent."""
+
+    def run(self, verilog, netlist_json, top):
+        return TimingResult(source="yosys-estimate")
 
 
 def _orchestrator(llm, **kw):
@@ -19,6 +27,7 @@ def _orchestrator(llm, **kw):
         get_schematic_pipeline(),
         get_simulation_pipeline(),
         get_formal_pipeline(),
+        _StubTiming(),
         **kw,
     )
 
