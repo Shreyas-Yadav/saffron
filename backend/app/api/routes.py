@@ -91,6 +91,7 @@ def synthesize(
         sim = simulation.run(verilog, result.netlist_json, req.top)
         result.wavedrom = sim.wavedrom
         result.sim_error = sim.error
+        result.testbench = sim.testbench
         result.formal = formal.run(verilog, result.netlist_json, req.top)
         result.timing = timing.run(verilog, result.netlist_json, req.top)
         steps.extend(

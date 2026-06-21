@@ -27,8 +27,8 @@ export function SchematicPanel({ result, loading }: Props) {
   if (result.error) {
     return (
       <Centered>
-        <span className="text-red-400">Synthesis error:</span>
-        <pre className="mt-2 max-w-full overflow-auto text-xs text-red-300">
+        <span className="font-medium text-err">Synthesis error</span>
+        <pre className="mt-2 max-w-full overflow-auto text-xs text-err/80">
           {result.error}
         </pre>
       </Centered>
@@ -105,7 +105,7 @@ function ZoomableSvg({ svg }: { svg: string }) {
   };
 
   return (
-    <div className="relative h-full w-full overflow-hidden bg-white">
+    <div className="relative h-full w-full overflow-hidden bg-paper">
       <div
         ref={container}
         className="h-full w-full cursor-grab touch-none active:cursor-grabbing"
@@ -127,7 +127,7 @@ function ZoomableSvg({ svg }: { svg: string }) {
       </div>
 
       {/* zoom controls */}
-      <div className="absolute bottom-3 right-3 flex flex-col overflow-hidden rounded-md border border-neutral-300 bg-white text-neutral-700 shadow">
+      <div className="absolute bottom-3 right-3 flex flex-col overflow-hidden rounded-md border border-black/10 bg-white/80 text-ink shadow-sm backdrop-blur">
         <Ctrl onClick={() => { const b = button(); zoomAround(1.25, b.cx, b.cy); }} label="+" />
         <Ctrl onClick={() => { const b = button(); zoomAround(1 / 1.25, b.cx, b.cy); }} label="−" />
         <Ctrl onClick={fit} label="Fit" small />
@@ -148,7 +148,7 @@ function Ctrl({
   return (
     <button
       onClick={onClick}
-      className={`border-b border-neutral-200 px-3 py-1.5 last:border-b-0 hover:bg-neutral-100 ${
+      className={`border-b border-black/10 px-3 py-1.5 last:border-b-0 hover:bg-black/5 ${
         small ? "text-xs" : "text-base leading-none"
       }`}
     >
@@ -163,7 +163,7 @@ function clamp(n: number, lo: number, hi: number) {
 
 function Centered({ children }: { children: React.ReactNode }) {
   return (
-    <div className="flex h-full w-full flex-col items-center justify-center bg-white p-6 text-center text-sm text-neutral-500">
+    <div className="flex h-full w-full flex-col items-center justify-center bg-ink p-6 text-center text-sm text-bone-dim">
       {children}
     </div>
   );

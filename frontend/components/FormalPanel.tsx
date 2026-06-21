@@ -22,7 +22,7 @@ export function FormalPanel({ formal, loading }: Props) {
   );
 
   return (
-    <div className="h-full w-full overflow-auto bg-neutral-950 p-5">
+    <div className="h-full w-full overflow-auto bg-ink p-5">
       <Verdict formal={formal} provenIntent={provenIntent} />
 
       <ul className="mt-5 space-y-2">
@@ -33,13 +33,13 @@ export function FormalPanel({ formal, loading }: Props) {
 
       {formal.counterexample && (
         <div className="mt-6">
-          <h3 className="mb-1 text-sm font-medium text-neutral-200">
+          <h3 className="mb-1 text-sm font-medium text-bone">
             Counterexample — a failing input
           </h3>
-          <p className="mb-2 text-xs text-neutral-500">
+          <p className="mb-2 text-xs text-bone-faint">
             The solver found this input vector where the property does not hold:
           </p>
-          <div className="h-56 rounded-md border border-neutral-800">
+          <div className="h-56 overflow-hidden rounded-md border border-hairline">
             <WaveformPanel
               wavedrom={formal.counterexample}
               simError={null}
@@ -61,7 +61,7 @@ function Verdict({
 }) {
   const map = {
     proven: {
-      cls: "border-emerald-700 bg-emerald-950/40 text-emerald-300",
+      cls: "border-ok/40 bg-ok/10 text-ok",
       label: provenIntent
         ? formal.bounded
           ? `Proven (bounded, ${formal.cycles ?? "N"} cycles)`
@@ -69,21 +69,23 @@ function Verdict({
         : "Well-formed — no loops or accidental latches",
     },
     refuted: {
-      cls: "border-red-800 bg-red-950/40 text-red-300",
+      cls: "border-err/40 bg-err/10 text-err",
       label: "Refuted — a rule does not hold",
     },
     skipped: {
-      cls: "border-neutral-700 bg-neutral-900 text-neutral-400",
+      cls: "border-hairline bg-ink-2 text-bone-dim",
       label: "No checks were applicable",
     },
     error: {
-      cls: "border-amber-800 bg-amber-950/30 text-amber-300",
+      cls: "border-warn/40 bg-warn/10 text-warn",
       label: "Formal check could not run",
     },
   }[formal.status];
 
   return (
-    <div className={`rounded-lg border px-4 py-3 text-sm font-medium ${map.cls}`}>
+    <div
+      className={`rounded-lg border px-5 py-4 font-display text-lg font-semibold tracking-tight ${map.cls}`}
+    >
       {map.label}
     </div>
   );
@@ -91,26 +93,26 @@ function Verdict({
 
 function CheckRow({ check }: { check: FormalCheck }) {
   const icon = {
-    passed: { ch: "✓", cls: "text-emerald-400" },
-    failed: { ch: "✗", cls: "text-red-400" },
-    skipped: { ch: "–", cls: "text-neutral-500" },
-    error: { ch: "!", cls: "text-amber-400" },
+    passed: { ch: "✓", cls: "text-ok" },
+    failed: { ch: "✗", cls: "text-err" },
+    skipped: { ch: "–", cls: "text-bone-faint" },
+    error: { ch: "!", cls: "text-warn" },
   }[check.status];
 
   return (
-    <li className="flex gap-3 rounded-md bg-neutral-900/60 px-3 py-2">
+    <li className="flex gap-3 rounded-md border border-hairline bg-ink-2 px-3 py-2">
       <span className={`mt-0.5 font-mono ${icon.cls}`}>{icon.ch}</span>
       <div className="min-w-0">
         <div className="flex items-center gap-2">
-          <span className="font-mono text-[13px] text-neutral-200 break-all">
+          <span className="font-mono text-[13px] text-bone break-all">
             {check.name}
           </span>
-          <span className="shrink-0 rounded bg-neutral-800 px-1.5 py-0.5 text-[10px] uppercase tracking-wide text-neutral-400">
+          <span className="shrink-0 rounded bg-ink-3 px-1.5 py-0.5 text-[10px] uppercase tracking-wide text-bone-dim">
             {check.kind}
           </span>
         </div>
         {check.detail && (
-          <p className="mt-0.5 text-xs text-neutral-500">{check.detail}</p>
+          <p className="mt-0.5 text-xs text-bone-faint">{check.detail}</p>
         )}
       </div>
     </li>
@@ -119,7 +121,7 @@ function CheckRow({ check }: { check: FormalCheck }) {
 
 function Centered({ children }: { children: React.ReactNode }) {
   return (
-    <div className="flex h-full w-full flex-col items-center justify-center p-6 text-center text-sm text-neutral-400">
+    <div className="flex h-full w-full flex-col items-center justify-center bg-ink p-6 text-center text-sm text-bone-dim">
       {children}
     </div>
   );

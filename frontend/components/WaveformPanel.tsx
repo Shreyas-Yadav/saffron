@@ -22,8 +22,8 @@ export function WaveformPanel({ wavedrom, simError, loading }: Props) {
   if (simError)
     return (
       <Centered>
-        <span className="text-neutral-300">No waveform</span>
-        <p className="mt-1 max-w-md text-xs text-neutral-500">{simError}</p>
+        <span className="text-bone">No waveform</span>
+        <p className="mt-1 max-w-md text-xs text-bone-faint">{simError}</p>
       </Centered>
     );
   if (!wavedrom || wavedrom.signal.length === 0)
@@ -35,7 +35,7 @@ export function WaveformPanel({ wavedrom, simError, loading }: Props) {
   const height = PAD * 2 + rowsH;
 
   return (
-    <div className="h-full w-full overflow-auto bg-neutral-950 p-4">
+    <div className="h-full w-full overflow-auto bg-ink p-4">
       <svg width={width} height={height} className="font-mono">
         {/* dashed vertical gridlines at each time-step boundary */}
         {Array.from({ length: steps + 1 }, (_, k) => (
@@ -45,7 +45,7 @@ export function WaveformPanel({ wavedrom, simError, loading }: Props) {
             x2={LABEL + k * U}
             y1={PAD}
             y2={PAD + rowsH}
-            className="stroke-neutral-700"
+            className="stroke-hairline"
             strokeWidth={1}
             strokeDasharray="3 4"
           />
@@ -73,7 +73,7 @@ function SignalRow({
       <text
         x={0}
         y={y + (HI + LO) / 2 + 4}
-        className="fill-neutral-300 text-[12px]"
+        className="fill-bone-dim text-[12px]"
       >
         {sig.name}
       </text>
@@ -104,7 +104,7 @@ function renderBinary(wave: string, y: number, steps: number) {
     d += `H ${x1} `;
     prevY = yk;
   }
-  return <path d={d} className="fill-none stroke-amber-400" strokeWidth={2} />;
+  return <path d={d} className="fill-none stroke-saffron" strokeWidth={2} />;
 }
 
 function renderBus(sig: WaveDromSignal, y: number) {
@@ -132,12 +132,12 @@ function renderBus(sig: WaveDromSignal, y: number) {
     } L ${x0} ${mid} Z`;
     return (
       <g key={i}>
-        <path d={d} className="fill-amber-500/10 stroke-amber-400" strokeWidth={2} />
+        <path d={d} className="fill-saffron/10 stroke-saffron" strokeWidth={2} />
         <text
           x={(x0 + x1) / 2}
           y={mid + 4}
           textAnchor="middle"
-          className="fill-amber-200 text-[12px]"
+          className="fill-ember text-[12px]"
         >
           {s.label}
         </text>
@@ -148,7 +148,7 @@ function renderBus(sig: WaveDromSignal, y: number) {
 
 function Centered({ children }: { children: React.ReactNode }) {
   return (
-    <div className="flex h-full w-full flex-col items-center justify-center p-6 text-center text-sm text-neutral-400">
+    <div className="flex h-full w-full flex-col items-center justify-center bg-ink p-6 text-center text-sm text-bone-dim">
       {children}
     </div>
   );

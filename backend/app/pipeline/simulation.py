@@ -29,16 +29,21 @@ class SimulationPipeline:
         self._testbench = testbench or AutoTestbenchGenerator()
 
     def run(self, verilog: str, netlist_json: str, top: str | None) -> SimResult:
+        # Guard + testbench generation can fail before there's anything to show.
         try:
             self._guard.check(verilog)  # vvp executes — guard before running
             top = resolve_top(netlist_json, top)
             tb = self._testbench.generate(netlist_json, top)
+        except (UnsafeVerilogError, TestbenchError) as exc:
+            return SimResult(error=str(exc))
+        # From here the testbench exists, so surface it even if simulation fails.
+        try:
             vcd = self._simulator.run(verilog, tb, top)
             # Show inputs first, then outputs, in declaration order.
             ports = ports_from_netlist(netlist_json, top)
             names = [p.name for p in ports if p.direction == "input"] + [
                 p.name for p in ports if p.direction == "output"
             ]
-            return SimResult(wavedrom=vcd_to_wavedrom(vcd, names))
-        except (UnsafeVerilogError, TestbenchError, SandboxError) as exc:
-            return SimResult(error=str(exc))
+            return SimResult(wavedrom=vcd_to_wavedrom(vcd, names), testbench=tb)
+        except SandboxError as exc:
+            return SimResult(error=str(exc), testbench=tb)

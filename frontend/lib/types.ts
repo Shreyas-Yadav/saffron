@@ -71,6 +71,7 @@ export interface SchematicResult {
   logs: string;
   wavedrom: WaveDrom | null;
   sim_error: string | null;
+  testbench: string | null;
   formal: FormalResult | null;
   timing: TimingResult | null;
   steps: ProcessStep[];
@@ -97,6 +98,7 @@ export interface GenerateOutcome {
   error: string | null;
   wavedrom: WaveDrom | null;
   sim_error: string | null;
+  testbench: string | null;
   formal: FormalResult | null;
   timing: TimingResult | null;
   steps: ProcessStep[];

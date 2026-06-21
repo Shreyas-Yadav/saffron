@@ -19,10 +19,12 @@ export function StepsPanel({ steps, loading, verilog }: Props) {
     return <Centered>Steps will appear here after generating or synthesizing.</Centered>;
 
   return (
-    <div className="h-full w-full overflow-auto bg-neutral-950 p-5">
+    <div className="h-full w-full overflow-auto bg-ink p-5">
       <div className="mb-5">
-        <h2 className="text-lg font-semibold text-neutral-100">What Saffron did</h2>
-        <p className="mt-1 max-w-2xl text-sm text-neutral-500">
+        <h2 className="font-display text-xl font-semibold tracking-tight text-bone">
+          What Saffron did
+        </h2>
+        <p className="mt-1 max-w-2xl text-sm text-bone-dim">
           A plain-language walkthrough of the tools and checks behind this result.
         </p>
       </div>
@@ -75,17 +77,17 @@ function StepCard({
         </div>
         <div className="min-w-0 flex-1">
           <div className="flex flex-wrap items-center gap-2">
-            <h3 className="font-medium text-neutral-100">{step.title}</h3>
+            <h3 className="font-medium text-bone">{step.title}</h3>
             <span className={`rounded px-1.5 py-0.5 text-[10px] uppercase tracking-wide ${s.badge}`}>
               {step.status}
             </span>
           </div>
-          <p className="mt-1 text-sm text-neutral-300">{step.summary}</p>
+          <p className="mt-1 text-sm text-bone-dim">{step.summary}</p>
           {step.details.length > 0 && (
-            <ul className="mt-3 space-y-1 text-sm text-neutral-500">
+            <ul className="mt-3 space-y-1 text-sm text-bone-dim">
               {step.details.map((d, i) => (
                 <li key={i} className="flex gap-2">
-                  <span className="mt-0.5 text-neutral-700">•</span>
+                  <span className="mt-0.5 text-bone-faint">•</span>
                   <span>{d}</span>
                 </li>
               ))}
@@ -93,10 +95,10 @@ function StepCard({
           )}
           {step.technical && (
             <details className="mt-3">
-              <summary className="cursor-pointer text-xs text-neutral-500 hover:text-neutral-300">
+              <summary className="cursor-pointer text-xs text-bone-faint hover:text-bone">
                 Technical details
               </summary>
-              <pre className="mt-2 max-h-48 overflow-auto rounded-md bg-neutral-950 p-3 text-xs text-neutral-400">
+              <pre className="mt-2 max-h-48 overflow-auto rounded-md border border-hairline bg-ink-3 p-3 text-xs text-bone-dim">
                 {step.technical}
               </pre>
             </details>
@@ -112,13 +114,13 @@ function StepCard({
               <button
                 onClick={onExplain}
                 disabled={explainState === "loading"}
-                className="inline-flex items-center gap-1.5 rounded-md border border-neutral-700 px-2.5 py-1 text-xs text-neutral-300 transition-colors hover:border-amber-600 hover:text-amber-300 disabled:opacity-50"
+                className="inline-flex items-center gap-1.5 rounded-md border border-hairline px-2.5 py-1 text-xs text-bone-dim transition-colors hover:border-saffron hover:text-ember disabled:opacity-50"
               >
                 <SparkleIcon />
                 {explainState === "loading" ? "Explaining…" : "Explain in simple terms"}
               </button>
               {explainState === "error" && (
-                <p className="mt-2 text-xs text-red-400">
+                <p className="mt-2 text-xs text-err">
                   {explainError} — please try again.
                 </p>
               )}
@@ -151,13 +153,13 @@ function ExplanationCard({
           {isFix ? "How to fix" : "What this means"}
         </p>
       </div>
-      <p className="mt-2 text-sm leading-relaxed text-neutral-100">{explanation.headline}</p>
+      <p className="mt-2 text-sm leading-relaxed text-bone">{explanation.headline}</p>
 
       {explanation.points.length > 0 &&
         (isFix ? (
           <ol className="mt-3 space-y-2">
             {explanation.points.map((p, i) => (
-              <li key={i} className="flex gap-2.5 text-sm leading-relaxed text-neutral-300">
+              <li key={i} className="flex gap-2.5 text-sm leading-relaxed text-bone-dim">
                 <span
                   className={`mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full text-[11px] font-medium ${t.num}`}
                 >
@@ -170,7 +172,7 @@ function ExplanationCard({
         ) : (
           <ul className="mt-3 space-y-1.5">
             {explanation.points.map((p, i) => (
-              <li key={i} className="flex gap-2.5 text-sm leading-relaxed text-neutral-300">
+              <li key={i} className="flex gap-2.5 text-sm leading-relaxed text-bone-dim">
                 <span className={`mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full ${t.dot}`} />
                 <span>{p}</span>
               </li>
@@ -184,28 +186,28 @@ function ExplanationCard({
 function explainTheme(status: ProcessStep["status"]) {
   return {
     error: {
-      box: "border-red-900/60 bg-red-950/20",
-      accent: "text-red-300",
-      num: "bg-red-950 text-red-300 ring-1 ring-red-900/70",
-      dot: "bg-red-500",
+      box: "border-err/30 bg-err/10",
+      accent: "text-err",
+      num: "bg-err/15 text-err ring-1 ring-err/30",
+      dot: "bg-err",
     },
     warning: {
-      box: "border-amber-900/60 bg-amber-950/20",
-      accent: "text-amber-300",
-      num: "bg-amber-950 text-amber-300 ring-1 ring-amber-900/70",
-      dot: "bg-amber-400",
+      box: "border-warn/30 bg-warn/10",
+      accent: "text-warn",
+      num: "bg-warn/15 text-warn ring-1 ring-warn/30",
+      dot: "bg-warn",
     },
     success: {
-      box: "border-emerald-900/60 bg-emerald-950/20",
-      accent: "text-emerald-300",
-      num: "bg-emerald-950 text-emerald-300 ring-1 ring-emerald-900/70",
-      dot: "bg-emerald-500",
+      box: "border-ok/30 bg-ok/10",
+      accent: "text-ok",
+      num: "bg-ok/15 text-ok ring-1 ring-ok/30",
+      dot: "bg-ok",
     },
     skipped: {
-      box: "border-sky-900/50 bg-sky-950/20",
-      accent: "text-sky-300",
-      num: "bg-sky-950 text-sky-300 ring-1 ring-sky-900/70",
-      dot: "bg-sky-500",
+      box: "border-info/30 bg-info/10",
+      accent: "text-info",
+      num: "bg-info/15 text-info ring-1 ring-info/30",
+      dot: "bg-info",
     },
   }[status];
 }
@@ -257,31 +259,31 @@ function SparkleIcon() {
 function styleFor(status: ProcessStep["status"]) {
   return {
     success: {
-      card: "border-emerald-900/70 bg-emerald-950/20",
-      dot: "bg-emerald-500 text-emerald-950",
-      badge: "bg-emerald-950 text-emerald-300",
+      card: "border-ok/25 bg-ok/[0.07]",
+      dot: "bg-ok text-ink",
+      badge: "bg-ok/15 text-ok",
     },
     warning: {
-      card: "border-amber-900/70 bg-amber-950/20",
-      dot: "bg-amber-400 text-amber-950",
-      badge: "bg-amber-950 text-amber-300",
+      card: "border-warn/25 bg-warn/[0.07]",
+      dot: "bg-warn text-ink",
+      badge: "bg-warn/15 text-warn",
     },
     error: {
-      card: "border-red-900/70 bg-red-950/20",
-      dot: "bg-red-400 text-red-950",
-      badge: "bg-red-950 text-red-300",
+      card: "border-err/25 bg-err/[0.07]",
+      dot: "bg-err text-ink",
+      badge: "bg-err/15 text-err",
     },
     skipped: {
-      card: "border-neutral-800 bg-neutral-900/40",
-      dot: "bg-neutral-700 text-neutral-200",
-      badge: "bg-neutral-800 text-neutral-400",
+      card: "border-hairline bg-ink-2",
+      dot: "bg-ink-3 text-bone",
+      badge: "bg-ink-3 text-bone-dim",
     },
   }[status];
 }
 
 function Centered({ children }: { children: React.ReactNode }) {
   return (
-    <div className="flex h-full w-full flex-col items-center justify-center p-6 text-center text-sm text-neutral-400">
+    <div className="flex h-full w-full flex-col items-center justify-center bg-ink p-6 text-center text-sm text-bone-dim">
       {children}
     </div>
   );

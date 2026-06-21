@@ -16,7 +16,7 @@ export function TimingPanel({ timing, loading }: Props) {
   const estimate = timing.source === "yosys-estimate";
 
   return (
-    <div className="h-full w-full overflow-auto bg-neutral-950 p-5">
+    <div className="h-full w-full overflow-auto bg-ink p-5">
       {/* Headline metric */}
       {timing.clocked && timing.max_frequency_mhz != null ? (
         <Headline value={formatFreq(timing.max_frequency_mhz)} label="max clock frequency" />
@@ -45,14 +45,14 @@ export function TimingPanel({ timing, loading }: Props) {
       {/* Critical path */}
       {timing.critical_path_cells.length > 0 && (
         <div className="mt-6">
-          <h3 className="mb-2 text-sm font-medium text-neutral-200">
+          <h3 className="mb-2 text-sm font-medium text-bone">
             Critical path ({timing.critical_path_cells.length} cells)
           </h3>
           <div className="flex flex-wrap items-center gap-1.5">
             {timing.critical_path_cells.map((c, i) => (
               <span key={i} className="flex items-center gap-1.5">
-                {i > 0 && <span className="text-neutral-600">→</span>}
-                <span className="rounded bg-neutral-800 px-2 py-0.5 font-mono text-xs text-amber-200">
+                {i > 0 && <span className="text-bone-faint">→</span>}
+                <span className="rounded bg-ink-2 px-2 py-0.5 font-mono text-xs text-ember">
                   {c}
                 </span>
               </span>
@@ -61,7 +61,7 @@ export function TimingPanel({ timing, loading }: Props) {
         </div>
       )}
 
-      <p className="mt-6 text-xs text-neutral-500">
+      <p className="mt-6 text-xs text-bone-faint">
         {estimate
           ? `Area estimate from yosys (Nangate45). ${
               timing.error ? `OpenSTA not run: ${timing.error}` : ""
@@ -78,9 +78,11 @@ function formatFreq(mhz: number): string {
 
 function Headline({ value, label }: { value: string; label: string }) {
   return (
-    <div className="rounded-lg border border-neutral-800 bg-neutral-900/50 px-5 py-4">
-      <div className="font-mono text-3xl text-amber-300">{value}</div>
-      <div className="mt-1 text-xs uppercase tracking-wide text-neutral-500">
+    <div className="rounded-lg border border-hairline bg-ink-2 px-5 py-4">
+      <div className="font-display text-4xl font-semibold tracking-tight text-saffron">
+        {value}
+      </div>
+      <div className="mt-1 text-xs uppercase tracking-wide text-bone-faint">
         {label}
       </div>
     </div>
@@ -89,9 +91,9 @@ function Headline({ value, label }: { value: string; label: string }) {
 
 function Metric({ label, value }: { label: string; value: string }) {
   return (
-    <div className="rounded-md bg-neutral-900/60 px-3 py-2">
-      <div className="font-mono text-lg text-neutral-100">{value}</div>
-      <div className="text-[11px] uppercase tracking-wide text-neutral-500">
+    <div className="rounded-md border border-hairline bg-ink-2 px-3 py-2">
+      <div className="font-mono text-lg text-bone">{value}</div>
+      <div className="text-[11px] uppercase tracking-wide text-bone-faint">
         {label}
       </div>
     </div>
@@ -100,7 +102,7 @@ function Metric({ label, value }: { label: string; value: string }) {
 
 function Centered({ children }: { children: React.ReactNode }) {
   return (
-    <div className="flex h-full w-full flex-col items-center justify-center p-6 text-center text-sm text-neutral-400">
+    <div className="flex h-full w-full flex-col items-center justify-center bg-ink p-6 text-center text-sm text-bone-dim">
       {children}
     </div>
   );

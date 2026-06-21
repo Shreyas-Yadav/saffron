@@ -329,6 +329,7 @@ class AgenticOrchestrator:
             error=schem.error,
             wavedrom=sim.wavedrom,
             sim_error=sim.error,
+            testbench=sim.testbench,
             formal=formal,
             timing=timing,
             steps=steps,

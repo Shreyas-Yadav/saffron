@@ -1,26 +1,142 @@
 @import "tailwindcss";
 
+/* ─────────────────────────────────────────────────────────────────────────
+   Saffron Premium — design tokens.
+   This is the single source of truth for the visual identity. Re-theme the
+   whole app by editing the values here; components use the semantic utilities
+   below (bg-ink, text-saffron, border-hairline, …) rather than raw colors.
+   ───────────────────────────────────────────────────────────────────────── */
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  --ink: #14110e; /* warm espresso ground */
+  --ink-2: #1e1a15; /* raised surfaces / panels */
+  --ink-3: #272118; /* deeper insets (code, pre) */
+  --hairline: #2e2820; /* warm borders / dividers */
+  --saffron: #e2571e; /* primary brand */
+  --ember: #f2a65a; /* secondary / hover / glow */
+  --bone: #f5efe6; /* primary text (warm off-white) */
+  --bone-dim: #a89e92; /* secondary text */
+  --bone-faint: #6f675d; /* tertiary text / captions */
+  --paper: #f7f2e9; /* warm drafting-paper surface (schematic) */
+
+  /* semantic status — one warm family */
+  --ok: #4ec59a;
+  --warn: #f2a65a;
+  --err: #f4674a;
+  --info: #6fb6e6;
+
+  /* aliases consumed by Next/Tailwind base */
+  --background: var(--ink);
+  --foreground: var(--bone);
 }
 
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
+
+  --color-ink: var(--ink);
+  --color-ink-2: var(--ink-2);
+  --color-ink-3: var(--ink-3);
+  --color-hairline: var(--hairline);
+  --color-saffron: var(--saffron);
+  --color-ember: var(--ember);
+  --color-bone: var(--bone);
+  --color-bone-dim: var(--bone-dim);
+  --color-bone-faint: var(--bone-faint);
+  --color-paper: var(--paper);
+
+  --color-ok: var(--ok);
+  --color-warn: var(--warn);
+  --color-err: var(--err);
+  --color-info: var(--info);
+
+  --font-display: var(--font-bricolage);
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
-}
-
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
 }
 
 body {
   background: var(--background);
   color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  font-family: var(--font-sans), ui-sans-serif, system-ui, sans-serif;
+}
+
+/* ── Signature: the saffron "signal underline" ───────────────────────────
+   A thin saffron line that draws in beneath the hero input and the active
+   tab, with one subtle pulse — brand (saffron) meeting subject (signals). */
+.signal-underline {
+  position: relative;
+}
+.signal-underline::after {
+  content: "";
+  position: absolute;
+  left: 0;
+  bottom: -1px;
+  height: 2px;
+  width: 100%;
+  background: linear-gradient(90deg, var(--saffron), var(--ember));
+  transform: scaleX(0);
+  transform-origin: left;
+  animation: signal-draw 0.6s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+}
+
+@keyframes signal-draw {
+  to {
+    transform: scaleX(1);
+  }
+}
+
+/* Ember wash — the warmth behind the hero */
+.hero-wash {
+  background: radial-gradient(
+    60% 55% at 50% 38%,
+    rgba(226, 87, 30, 0.16),
+    rgba(20, 17, 14, 0) 70%
+  );
+}
+
+/* Staggered hero entrance. Children of .hero-stagger animate in order, so the
+   layout owns the rhythm — no per-element inline delays. */
+.rise {
+  opacity: 0;
+  animation: rise-in 0.7s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+}
+.hero-stagger > *:nth-child(2) {
+  animation-delay: 80ms;
+}
+.hero-stagger > *:nth-child(3) {
+  animation-delay: 160ms;
+}
+.hero-stagger > *:nth-child(4) {
+  animation-delay: 240ms;
+}
+.hero-stagger > *:nth-child(5) {
+  animation-delay: 320ms;
+}
+.hero-stagger > *:nth-child(6) {
+  animation-delay: 400ms;
+}
+.hero-stagger > *:nth-child(7) {
+  animation-delay: 480ms;
+}
+@keyframes rise-in {
+  from {
+    opacity: 0;
+    transform: translateY(12px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .signal-underline::after {
+    animation: none;
+    transform: scaleX(1);
+  }
+  .rise {
+    animation: none;
+    opacity: 1;
+    transform: none;
+  }
 }

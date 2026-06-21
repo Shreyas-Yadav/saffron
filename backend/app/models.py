@@ -100,6 +100,8 @@ class SchematicResult(BaseModel):
     # Best-effort simulation result attached by the /synthesize route.
     wavedrom: dict | None = None
     sim_error: str | None = None
+    # The auto-generated Verilog testbench that drove the simulation (if produced).
+    testbench: str | None = None
     # Best-effort formal-verification result attached by the /synthesize route.
     formal: FormalResult | None = None
     # Best-effort static-timing result attached by the /synthesize route.
@@ -114,6 +116,9 @@ class SimResult(BaseModel):
     wavedrom: dict | None = None
     error: str | None = None
     logs: str = ""
+    # The auto-generated testbench fed to the simulator (present even when the
+    # simulation itself fails, so the UI can still show what was run).
+    testbench: str | None = None
 
 
 class SynthesizeRequest(BaseModel):
@@ -167,6 +172,8 @@ class GenerateOutcome(BaseModel):
     # or failed. `sim_error` explains a failure without blocking the schematic.
     wavedrom: dict | None = None
     sim_error: str | None = None
+    # The auto-generated Verilog testbench that drove the simulation (if produced).
+    testbench: str | None = None
     # Best-effort formal-verification result; null if it was skipped or errored.
     formal: FormalResult | None = None
     # Best-effort static-timing result; null if it was skipped or errored.

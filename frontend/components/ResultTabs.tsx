@@ -5,6 +5,7 @@ import { useState } from "react";
 import { FormalPanel } from "@/components/FormalPanel";
 import { SchematicPanel } from "@/components/SchematicPanel";
 import { StepsPanel } from "@/components/StepsPanel";
+import { TestbenchPanel } from "@/components/TestbenchPanel";
 import { TimingPanel } from "@/components/TimingPanel";
 import { WaveformPanel } from "@/components/WaveformPanel";
 import type { SchematicResult } from "@/lib/types";
@@ -17,29 +18,32 @@ interface Props {
   verilog: string;
 }
 
-type Tab = "steps" | "schematic" | "waveform" | "formal" | "timing";
+type Tab = "steps" | "schematic" | "waveform" | "testbench" | "formal" | "timing";
 
 export function ResultTabs({ result, loading, verilog }: Props) {
   const [tab, setTab] = useState<Tab>("steps");
 
+  const tabs: { id: Tab; label: string }[] = [
+    { id: "steps", label: "Steps" },
+    { id: "schematic", label: "Schematic" },
+    { id: "waveform", label: "Waveform" },
+    { id: "testbench", label: "Testbench" },
+    { id: "formal", label: "Formal" },
+    { id: "timing", label: "Timing" },
+  ];
+
   return (
     <div className="flex h-full flex-col">
-      <div className="flex gap-1 border-b border-neutral-800 px-3 py-2">
-        <TabButton active={tab === "steps"} onClick={() => setTab("steps")}>
-          Steps
-        </TabButton>
-        <TabButton active={tab === "schematic"} onClick={() => setTab("schematic")}>
-          Schematic
-        </TabButton>
-        <TabButton active={tab === "waveform"} onClick={() => setTab("waveform")}>
-          Waveform
-        </TabButton>
-        <TabButton active={tab === "formal"} onClick={() => setTab("formal")}>
-          Formal
-        </TabButton>
-        <TabButton active={tab === "timing"} onClick={() => setTab("timing")}>
-          Timing
-        </TabButton>
+      <div className="flex gap-1 overflow-x-auto border-b border-hairline px-3 py-2">
+        {tabs.map((t) => (
+          <TabButton
+            key={t.id}
+            active={tab === t.id}
+            onClick={() => setTab(t.id)}
+          >
+            {t.label}
+          </TabButton>
+        ))}
       </div>
       <div className="min-h-0 flex-1">
         {tab === "steps" && (
@@ -56,6 +60,12 @@ export function ResultTabs({ result, loading, verilog }: Props) {
           <WaveformPanel
             wavedrom={result?.wavedrom ?? null}
             simError={result?.sim_error ?? null}
+            loading={loading}
+          />
+        )}
+        {tab === "testbench" && (
+          <TestbenchPanel
+            testbench={result?.testbench ?? null}
             loading={loading}
           />
         )}
@@ -82,13 +92,11 @@ function TabButton({
   return (
     <button
       onClick={onClick}
-      className={`rounded-md px-3 py-1 text-sm ${
-        active
-          ? "bg-neutral-800 text-neutral-100"
-          : "text-neutral-400 hover:text-neutral-200"
+      className={`relative shrink-0 px-3 py-1.5 text-sm transition-colors ${
+        active ? "text-bone" : "text-bone-dim hover:text-bone"
       }`}
     >
-      {children}
+      <span className={active ? "signal-underline" : undefined}>{children}</span>
     </button>
   );
 }
