@@ -38,15 +38,6 @@ class FormalResult(BaseModel):
     logs: str = ""
 
 
-class PathStage(BaseModel):
-    """One gate along the critical path: its cell type, the incremental delay it
-    adds (ns), and the cumulative arrival time at its output (ns)."""
-
-    cell: str
-    delay_ns: float
-    time_ns: float
-
-
 class TimingResult(BaseModel):
     """Output of static timing analysis: how fast the mapped circuit can run.
 
@@ -55,18 +46,12 @@ class TimingResult(BaseModel):
     for a **combinational** one it's null and `critical_path_ns` is the input→output
     propagation delay. `source` records whether OpenSTA produced the numbers or we
     fell back to a yosys-only area/cell estimate (no max frequency).
-
-    `start_point`/`end_point` are the pins the slowest path runs between (e.g.
-    `op[2]` → `zero`) — real port/register names usable to highlight the schematic.
-    `critical_path` is the gate-by-gate chain with per-stage delays.
     """
 
     clocked: bool = False
     max_frequency_mhz: float | None = None
     critical_path_ns: float | None = None
-    start_point: str | None = None
-    end_point: str | None = None
-    critical_path: list[PathStage] = Field(default_factory=list)
+    critical_path_cells: list[str] = Field(default_factory=list)
     area_um2: float | None = None
     cell_count: int | None = None
     source: Literal["opensta", "yosys-estimate"] = "opensta"

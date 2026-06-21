@@ -17,7 +17,7 @@ import re
 from abc import ABC, abstractmethod
 from pathlib import Path
 
-from ..models import PathStage, TimingResult
+from ..models import TimingResult
 from .sandbox import Sandbox, SandboxError
 from .testbench import Port, find_clock
 
@@ -133,37 +133,18 @@ def _parse_stat(text: str) -> tuple[float | None, int | None]:
     return area, cells
 
 
-# A path stage line: "<delay>  <time>  <edge> <inst>/<pin> (<CELLTYPE_X#>)".
-_STAGE = re.compile(
-    r"^\s*([\d.]+)\s+([\d.]+)\s+[v^]\s+(\S+)\s+\(([A-Za-z][\w]*_X\d+)\)\s*$",
-    re.MULTILINE,
-)
-
-
-def _parse_path(text: str) -> list[PathStage]:
-    """Gate-by-gate critical path with per-stage delays. A single cell can span two
-    report lines (a flop's CK then Q); merge consecutive lines from the same
-    instance so each gate appears once with its combined delay."""
-    merged: list[list] = []  # [delay, time, inst, cell]
-    for delay, time, instpin, cell in _STAGE.findall(text):
-        inst = instpin.split("/")[0]
-        d, t = float(delay), float(time)
-        if merged and merged[-1][2] == inst:
-            merged[-1][0] = round(merged[-1][0] + d, 4)
-            merged[-1][1] = round(t, 4)
-        else:
-            merged.append([round(d, 4), round(t, 4), inst, cell])
-    return [PathStage(cell=cell, delay_ns=d, time_ns=t) for d, t, _, cell in merged]
-
-
 def _parse_sta(
     text: str, period: float, clocked: bool, area: float | None, cells: int | None
 ) -> TimingResult:
     slack_m = re.search(r"WORST_SLACK\s+(-?[\d.]+)", text)
     arrival_m = re.search(r"([\d.]+)\s+data arrival time", text)
-    start_m = re.search(r"Startpoint:\s+(\S+)", text)
-    end_m = re.search(r"Endpoint:\s+(\S+)", text)
-    path = _parse_path(text)
+    # Cell types along the reported path, in order (e.g. DFF_X1, XNOR2_X1, ...).
+    # The launch flop appears on two consecutive lines (its CK then Q), so collapse
+    # consecutive duplicates to keep the chain (and its count) honest.
+    raw_cells = re.findall(r"\(([A-Z][A-Z0-9]*_X\d+)\)", text)
+    path_cells = [
+        c for i, c in enumerate(raw_cells) if i == 0 or c != raw_cells[i - 1]
+    ]
 
     if slack_m is None:
         return TimingResult(
@@ -183,9 +164,7 @@ def _parse_sta(
         clocked=clocked,
         max_frequency_mhz=max_freq,
         critical_path_ns=critical_ns,
-        start_point=start_m.group(1) if start_m else None,
-        end_point=end_m.group(1) if end_m else None,
-        critical_path=path,
+        critical_path_cells=path_cells,
         area_um2=area,
         cell_count=cells,
         source="opensta",

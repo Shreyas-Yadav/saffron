@@ -1,7 +1,7 @@
 // Pure presentational static-timing report. Headline is max clock frequency for a
 // clocked design (or propagation delay for combinational), plus the critical-path
 // cell chain and area. Falls back to an area-only readout when OpenSTA is offline.
-import type { PathStage, TimingResult } from "@/lib/types";
+import type { TimingResult } from "@/lib/types";
 
 interface Props {
   timing: TimingResult | null;
@@ -42,21 +42,22 @@ export function TimingPanel({ timing, loading }: Props) {
         )}
       </div>
 
-      {/* Critical path: gate-by-gate delay waterfall from start pin to end pin */}
-      {timing.critical_path.length > 0 && (
+      {/* Critical path */}
+      {timing.critical_path_cells.length > 0 && (
         <div className="mt-6">
-          <h3 className="mb-1 text-sm font-medium text-neutral-200">
-            Critical path ({timing.critical_path.length} gates)
+          <h3 className="mb-2 text-sm font-medium text-neutral-200">
+            Critical path ({timing.critical_path_cells.length} cells)
           </h3>
-          {timing.start_point && timing.end_point && (
-            <p className="mb-3 font-mono text-xs text-neutral-400">
-              <span className="text-amber-300">{timing.start_point}</span>
-              <span className="text-neutral-600"> → … → </span>
-              <span className="text-amber-300">{timing.end_point}</span>
-              <span className="text-neutral-600"> (slowest path)</span>
-            </p>
-          )}
-          <CriticalPath stages={timing.critical_path} />
+          <div className="flex flex-wrap items-center gap-1.5">
+            {timing.critical_path_cells.map((c, i) => (
+              <span key={i} className="flex items-center gap-1.5">
+                {i > 0 && <span className="text-neutral-600">→</span>}
+                <span className="rounded bg-neutral-800 px-2 py-0.5 font-mono text-xs text-amber-200">
+                  {c}
+                </span>
+              </span>
+            ))}
+          </div>
         </div>
       )}
 
@@ -67,37 +68,6 @@ export function TimingPanel({ timing, loading }: Props) {
             }`
           : "Mapped to the Nangate45 standard-cell library and timed with OpenSTA."}
       </p>
-    </div>
-  );
-}
-
-function CriticalPath({ stages }: { stages: PathStage[] }) {
-  const maxDelay = Math.max(...stages.map((s) => s.delay_ns), 1e-9);
-  return (
-    <div className="flex flex-wrap items-stretch gap-1.5">
-      {stages.map((s, i) => (
-        <div key={i} className="flex items-stretch gap-1.5">
-          {i > 0 && <div className="self-center text-neutral-600">→</div>}
-          <div className="flex w-24 flex-col rounded-md border border-neutral-800 bg-neutral-900/60 p-2">
-            <span className="truncate font-mono text-xs text-amber-200" title={s.cell}>
-              {s.cell}
-            </span>
-            <span className="mt-0.5 font-mono text-[11px] text-neutral-400">
-              +{s.delay_ns.toFixed(3)} ns
-            </span>
-            {/* delay bar — wider = slower gate, so the bottleneck stands out */}
-            <div className="mt-1 h-1 rounded bg-neutral-800">
-              <div
-                className="h-1 rounded bg-amber-400"
-                style={{ width: `${(s.delay_ns / maxDelay) * 100}%` }}
-              />
-            </div>
-            <span className="mt-1 font-mono text-[10px] text-neutral-600">
-              t={s.time_ns.toFixed(3)}
-            </span>
-          </div>
-        </div>
-      ))}
     </div>
   );
 }

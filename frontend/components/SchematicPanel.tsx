@@ -3,14 +3,7 @@
 // detail. No fetch logic or app state — fed entirely by props.
 "use client";
 
-import {
-  useCallback,
-  useEffect,
-  useLayoutEffect,
-  useMemo,
-  useRef,
-  useState,
-} from "react";
+import { useCallback, useEffect, useLayoutEffect, useRef, useState } from "react";
 
 import type { SchematicResult } from "@/lib/types";
 
@@ -28,13 +21,6 @@ interface View {
 const MIN = 0.05;
 const MAX = 12;
 
-// Critical-path endpoints (e.g. "op[2]") map to a schematic port label by their base
-// name ("op"). Netlist-internal names (registers like "_103_") aren't drawn, so skip.
-function portBase(point: string | null | undefined): string | null {
-  if (!point || point.startsWith("_")) return null;
-  return point.replace(/\[.*$/, "");
-}
-
 export function SchematicPanel({ result, loading }: Props) {
   if (loading) return <Centered>Synthesizing circuit…</Centered>;
   if (!result) return <Centered>Schematic will appear here.</Centered>;
@@ -48,30 +34,10 @@ export function SchematicPanel({ result, loading }: Props) {
       </Centered>
     );
   }
-
-  const t = result.timing;
-  const startBase = portBase(t?.start_point);
-  const endBase = portBase(t?.end_point);
-  const highlights = [...new Set([startBase, endBase].filter(Boolean) as string[])];
-  const caption =
-    highlights.length && t?.start_point && t?.end_point
-      ? `${t.start_point} → ${t.end_point}`
-      : null;
-
-  return <ZoomableSvg svg={result.svg ?? ""} highlights={highlights} caption={caption} />;
+  return <ZoomableSvg svg={result.svg ?? ""} />;
 }
 
-const HILITE = "#ea580c"; // orange-600 — the "hot" critical path
-
-function ZoomableSvg({
-  svg,
-  highlights,
-  caption,
-}: {
-  svg: string;
-  highlights: string[];
-  caption: string | null;
-}) {
+function ZoomableSvg({ svg }: { svg: string }) {
   const container = useRef<HTMLDivElement>(null);
   const content = useRef<HTMLDivElement>(null);
   const [view, setView] = useState<View>({ scale: 1, x: 0, y: 0 });
@@ -93,19 +59,10 @@ function ZoomableSvg({
     });
   }, []);
 
-  // Highlight the critical-path endpoint labels by baking a CSS rule INTO the SVG
-  // string before injection. netlistsvg tags each port label `<text>` with a
-  // `cell_<portname>` class, so recoloring is just a stylesheet rule. Doing it in
-  // the markup (not by mutating the DOM afterward) means React owns the result and
-  // can't reconcile the marks away.
-  const hkey = highlights.join("|");
-  const markedSvg = useMemo(() => injectHighlight(svg, hkey), [svg, hkey]);
-
-  // Fit on new schematic / resize, on the next frame (after layout).
+  // Re-fit when a new schematic arrives or the panel resizes.
   useLayoutEffect(() => {
-    const r = requestAnimationFrame(fit);
-    return () => cancelAnimationFrame(r);
-  }, [markedSvg, fit]);
+    fit();
+  }, [svg, fit]);
   useEffect(() => {
     const ro = new ResizeObserver(fit);
     if (container.current) ro.observe(container.current);
@@ -149,12 +106,6 @@ function ZoomableSvg({
 
   return (
     <div className="relative h-full w-full overflow-hidden bg-white">
-      {caption && (
-        <div className="pointer-events-none absolute left-3 top-3 z-10 rounded-md bg-white/90 px-2.5 py-1 text-xs text-neutral-700 shadow ring-1 ring-neutral-200">
-          <span style={{ color: HILITE }}>●</span> Critical path:{" "}
-          <span className="font-mono font-medium">{caption}</span>
-        </div>
-      )}
       <div
         ref={container}
         className="h-full w-full cursor-grab touch-none active:cursor-grabbing"
@@ -171,7 +122,7 @@ function ZoomableSvg({
             transformOrigin: "0 0",
             width: "max-content",
           }}
-          dangerouslySetInnerHTML={{ __html: markedSvg }}
+          dangerouslySetInnerHTML={{ __html: svg }}
         />
       </div>
 
@@ -208,18 +159,6 @@ function Ctrl({
 
 function clamp(n: number, lo: number, hi: number) {
   return Math.max(lo, Math.min(hi, n));
-}
-
-// Bake a highlight rule into the SVG markup. netlistsvg gives each port label a
-// `cell_<portname>` class, so recoloring the endpoints is one injected <style> rule
-// (inserted just after the opening <svg> tag). `!important` beats netlistsvg's own
-// `text { fill:#000 }`.
-function injectHighlight(svg: string, hkey: string): string {
-  const names = hkey ? hkey.split("|") : [];
-  if (!names.length) return svg;
-  const selector = names.map((n) => `.cell_${n.replace(/[^\w-]/g, "")}`).join(",");
-  const style = `<style>${selector}{fill:${HILITE}!important;font-weight:bold;}</style>`;
-  return svg.replace(/(<svg\b[^>]*>)/, `$1${style}`);
 }
 
 function Centered({ children }: { children: React.ReactNode }) {
